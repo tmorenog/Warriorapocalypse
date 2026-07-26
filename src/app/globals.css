@@ -1,0 +1,107 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: dark;
+}
+
+html,
+body {
+  padding: 0;
+  margin: 0;
+  min-height: 100%;
+  background: #0c0f14;
+  color: #e8e0cf;
+  font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  -webkit-tap-highlight-color: transparent;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+/* Text-size accessibility scale (applied on <html data-textscale>) */
+html[data-textscale="small"] {
+  font-size: 14px;
+}
+html[data-textscale="normal"] {
+  font-size: 16px;
+}
+html[data-textscale="large"] {
+  font-size: 18px;
+}
+
+/* High-contrast mode */
+html[data-contrast="high"] body {
+  background: #000;
+  color: #fff;
+}
+html[data-contrast="high"] .panel {
+  border-color: #fff !important;
+}
+
+/* Reduced motion: disable animations */
+html[data-motion="reduced"] * {
+  animation: none !important;
+  transition: none !important;
+}
+
+.panel {
+  background: rgba(29, 37, 48, 0.85);
+  border: 1px solid rgba(139, 171, 106, 0.25);
+  border-radius: 0.75rem;
+  backdrop-filter: blur(2px);
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  border-radius: 0.6rem;
+  padding: 0.6rem 1rem;
+  font-weight: 600;
+  border: 1px solid rgba(139, 171, 106, 0.35);
+  background: rgba(92, 122, 75, 0.25);
+  color: #e8e0cf;
+  cursor: pointer;
+  transition: transform 0.08s ease, background 0.15s ease;
+  min-height: 44px;
+}
+.btn:hover:not(:disabled) {
+  background: rgba(92, 122, 75, 0.45);
+}
+.btn:active:not(:disabled) {
+  transform: translateY(1px);
+}
+.btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+.btn-primary {
+  background: linear-gradient(180deg, #c76b3b, #a2542c);
+  border-color: #d9834f;
+  color: #fff;
+}
+.btn-primary:hover:not(:disabled) {
+  background: linear-gradient(180deg, #d9834f, #b45f34);
+}
+.btn-danger {
+  background: rgba(162, 59, 59, 0.4);
+  border-color: #a23b3b;
+}
+
+.scrollbar-thin::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+.scrollbar-thin::-webkit-scrollbar-thumb {
+  background: rgba(139, 171, 106, 0.4);
+  border-radius: 8px;
+}
+
+:focus-visible {
+  outline: 2px solid #8bab6a;
+  outline-offset: 2px;
+}
