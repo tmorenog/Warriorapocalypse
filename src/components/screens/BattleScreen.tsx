@@ -2,6 +2,8 @@ import React, { useState } from "react";
 import type { GameController } from "@/game/useGameController";
 import type { BattleAction, BattleActionType, Combatant } from "@/engine/types";
 import { Scene } from "@/components/art/Scene";
+import { CatSprite } from "@/components/art/CatSprite";
+import { EnemySprite } from "@/components/art/EnemySprite";
 import { Button, Panel } from "@/components/ui/primitives";
 import { ENEMIES_BY_ID } from "@/data/enemies";
 
@@ -54,17 +56,36 @@ export function BattleScreen({ ctx }: { ctx: GameController }) {
         Battle · {ENEMIES_BY_ID[battle.enemyGroupId]?.name ?? "Enemies"}
       </h1>
 
-      <Scene weather={run.weather} variant="forest" height={150}>
-        <div className="flex h-full items-center justify-between px-6">
-          <div className="flex gap-2">
-            {clan.filter((c) => c.alive).map((c) => (
-              <CombatantBadge key={c.id} c={c} active={c.id === actorId} />
-            ))}
+      <Scene weather={run.weather} variant="forest" height={180}>
+        <div className="flex h-full items-end justify-between px-3 pb-1 sm:px-6">
+          <div className="flex items-end gap-1 sm:gap-2">
+            {clan.filter((c) => c.alive).map((c) => {
+              const cat = run.cats.find((rc) => rc.id === c.catId);
+              return (
+                <CombatantBadge key={c.id} c={c} active={c.id === actorId}>
+                  {cat ? (
+                    <CatSprite
+                      appearance={cat.appearance}
+                      cosmetics={cat.cosmetics}
+                      size={70}
+                      facing="right"
+                      action={c.id === actorId ? "pounce" : "idle"}
+                    />
+                  ) : null}
+                </CombatantBadge>
+              );
+            })}
           </div>
-          <div className="text-2xl">⚔</div>
-          <div className="flex gap-2">
+          <div className="flex items-end gap-1 sm:gap-2">
             {enemies.filter((e) => e.alive).map((e) => (
-              <CombatantBadge key={e.id} c={e} active={e.id === actorId} enemy />
+              <CombatantBadge key={e.id} c={e} active={e.id === actorId} enemy>
+                <EnemySprite
+                  enemyDefId={e.enemyDefId ?? battle.enemyGroupId}
+                  size={70}
+                  facing="left"
+                  action={e.id === actorId ? "pounce" : "idle"}
+                />
+              </CombatantBadge>
             ))}
           </div>
         </div>
@@ -116,14 +137,24 @@ export function BattleScreen({ ctx }: { ctx: GameController }) {
   );
 }
 
-function CombatantBadge({ c, active, enemy }: { c: Combatant; active?: boolean; enemy?: boolean }) {
+function CombatantBadge({
+  c,
+  active,
+  enemy,
+  children,
+}: {
+  c: Combatant;
+  active?: boolean;
+  enemy?: boolean;
+  children?: React.ReactNode;
+}) {
   const pct = Math.max(0, (c.health / c.maxHealth) * 100);
   return (
-    <div className={`w-16 rounded-lg border p-1 text-center text-[10px] ${active ? "border-ember bg-ember/20" : "border-fern/20 bg-black/30"}`}>
-      <div className="text-lg">{enemy ? "🐀" : "🐈"}</div>
-      <div className="truncate text-parchment">{c.name}</div>
-      <div className="mt-0.5 h-1.5 overflow-hidden rounded-full bg-black/50">
-        <div className="h-full" style={{ width: `${pct}%`, background: enemy ? "#c15a5a" : "#8bab6a" }} />
+    <div className={`flex w-[68px] flex-col items-center rounded-lg border p-1 text-center text-[10px] sm:w-20 ${active ? "border-ember bg-ember/20" : "border-transparent"}`}>
+      <div className="h-[52px] w-full">{children}</div>
+      <div className="w-full truncate text-parchment">{c.name}</div>
+      <div className="mt-0.5 h-1.5 w-full overflow-hidden rounded-full bg-black/50">
+        <div className="h-full transition-all duration-300" style={{ width: `${pct}%`, background: enemy ? "#c15a5a" : "#8bab6a" }} />
       </div>
       {c.defending && <div className="text-[8px] text-blue-300">defending</div>}
       {c.statuses.includes("infected") && <div className="text-[8px] text-infect">infected</div>}

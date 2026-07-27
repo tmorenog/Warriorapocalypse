@@ -105,3 +105,78 @@ html[data-motion="reduced"] * {
   outline: 2px solid #8bab6a;
   outline-offset: 2px;
 }
+
+/* ---- Living cat / creature sprite animations ----
+   All use transform-box: fill-box so transform-origin is relative to the
+   element's own bounding box inside the SVG. Reduced-motion disables them. */
+.spr {
+  transform-box: fill-box;
+}
+
+@keyframes spr-breathe {
+  0%, 100% { transform: scaleY(1) scaleX(1); }
+  50% { transform: scaleY(1.05) scaleX(0.99); }
+}
+@keyframes spr-blink {
+  0%, 92%, 100% { transform: scaleY(1); }
+  96% { transform: scaleY(0.1); }
+}
+@keyframes spr-tail {
+  0%, 100% { transform: rotate(-8deg); }
+  50% { transform: rotate(12deg); }
+}
+@keyframes spr-tail-fast {
+  0%, 100% { transform: rotate(-14deg); }
+  50% { transform: rotate(18deg); }
+}
+@keyframes spr-ear {
+  0%, 88%, 100% { transform: rotate(0deg); }
+  93% { transform: rotate(-9deg); }
+}
+@keyframes spr-head {
+  0%, 100% { transform: translateY(0) rotate(0deg); }
+  50% { transform: translateY(-1.2px) rotate(-1.5deg); }
+}
+@keyframes spr-bob {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-2.5px); }
+}
+@keyframes spr-leg-a {
+  0%, 100% { transform: rotate(-18deg); }
+  50% { transform: rotate(18deg); }
+}
+@keyframes spr-leg-b {
+  0%, 100% { transform: rotate(18deg); }
+  50% { transform: rotate(-18deg); }
+}
+@keyframes spr-pounce {
+  0% { transform: translateX(0) translateY(0); }
+  35% { transform: translateX(0) translateY(-8px) scaleX(1.05); }
+  60% { transform: translateX(18px) translateY(2px); }
+  100% { transform: translateX(0) translateY(0); }
+}
+@keyframes spr-hit {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-5px) rotate(-3deg); }
+  75% { transform: translateX(4px) rotate(2deg); }
+}
+@keyframes spr-pace {
+  0% { transform: translateX(0) scaleX(1); }
+  48% { transform: translateX(38px) scaleX(1); }
+  50% { transform: translateX(38px) scaleX(-1); }
+  98% { transform: translateX(0) scaleX(-1); }
+  100% { transform: translateX(0) scaleX(1); }
+}
+
+.a-breathe { animation: spr-breathe 3.2s ease-in-out infinite; }
+.a-blink { animation: spr-blink 4.5s ease-in-out infinite; }
+.a-tail { animation: spr-tail 2.4s ease-in-out infinite; }
+.a-tail-fast { animation: spr-tail-fast 0.9s ease-in-out infinite; }
+.a-ear { animation: spr-ear 5s ease-in-out infinite; }
+.a-head { animation: spr-head 3.6s ease-in-out infinite; }
+.a-bob { animation: spr-bob 0.5s ease-in-out infinite; }
+.a-leg-a { animation: spr-leg-a 0.5s ease-in-out infinite; }
+.a-leg-b { animation: spr-leg-b 0.5s ease-in-out infinite; }
+.a-pounce { animation: spr-pounce 0.6s ease-out; }
+.a-hit { animation: spr-hit 0.4s ease-in-out; }
+.a-pace { animation: spr-pace 9s ease-in-out infinite; }

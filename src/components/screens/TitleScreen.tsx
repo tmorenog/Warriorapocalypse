@@ -1,7 +1,7 @@
 import React from "react";
 import type { GameController } from "@/game/useGameController";
 import { Scene } from "@/components/art/Scene";
-import { CatPortrait } from "@/components/art/CatPortrait";
+import { CatSprite } from "@/components/art/CatSprite";
 
 const MENU: { key: string; label: string; screen?: string; action?: string; primary?: boolean }[] = [
   { label: "New Single-Player Game", action: "new", key: "new", primary: true },
@@ -26,9 +26,11 @@ export function TitleScreen({ ctx }: { ctx: GameController }) {
             Warrior Apocalypse
           </h1>
           <p className="mt-1 text-sm text-fern">Survive the infection. Protect your clan.</p>
-          <div className="mt-2 flex gap-3">
-            <CatPortrait appearance={{ furColor: "#d9622a", furPattern: "solid", eyeColor: "#4a8f3c", scars: "none", accessory: "none", bodyType: "medium", earShape: "pointed", tailStyle: "medium" }} size={44} />
-            <CatPortrait appearance={{ furColor: "#5a5b60", furPattern: "solid", eyeColor: "#d67a2a", scars: "ear", accessory: "none", bodyType: "large", earShape: "pointed", tailStyle: "medium" }} size={44} />
+          <div className="mt-1 flex items-end gap-4">
+            <div className="a-pace spr" style={{ transformOrigin: "center" }}>
+              <CatSprite appearance={{ furColor: "#d9622a", furPattern: "solid", eyeColor: "#4a8f3c", scars: "none", accessory: "none", bodyType: "medium", earShape: "pointed", tailStyle: "medium" }} size={62} action="walk" />
+            </div>
+            <CatSprite appearance={{ furColor: "#5a5b60", furPattern: "tabby", eyeColor: "#d67a2a", scars: "ear", accessory: "none", bodyType: "large", earShape: "tufted", tailStyle: "fluffy" }} size={62} facing="left" action="idle" />
           </div>
         </div>
       </Scene>

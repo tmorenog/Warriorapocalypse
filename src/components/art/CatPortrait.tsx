@@ -36,17 +36,19 @@ export function CatPortrait({ appearance, cosmetics = [], size = 72, dimmed, tur
       </defs>
       <circle cx="50" cy="50" r="48" fill={`url(#bg-${hashId(fur)})`} stroke={shade(fur, 0.1)} strokeWidth="2" />
 
-      {/* Ears */}
-      <polygon points={rounded ? "26,44 34,20 46,40" : "24,46 32,16 46,40"} fill={fur} stroke={furDark} strokeWidth="1" />
-      <polygon points={rounded ? "74,44 66,20 54,40" : "76,46 68,16 54,40"} fill={fur} stroke={furDark} strokeWidth="1" />
-      <polygon points="30,40 34,26 41,38" fill={shade(fur, 0.15)} />
-      <polygon points="70,40 66,26 59,38" fill={shade(fur, 0.15)} />
-      {earTuft && (
-        <>
-          <path d="M32,18 q-4,-4 -1,-8" stroke={furDark} strokeWidth="1.5" fill="none" />
-          <path d="M68,18 q4,-4 1,-8" stroke={furDark} strokeWidth="1.5" fill="none" />
-        </>
-      )}
+      {/* Ears (twitch) */}
+      <g className="spr a-ear" style={{ transformOrigin: "50px 30px" }}>
+        <polygon points={rounded ? "26,44 34,20 46,40" : "24,46 32,16 46,40"} fill={fur} stroke={furDark} strokeWidth="1" />
+        <polygon points={rounded ? "74,44 66,20 54,40" : "76,46 68,16 54,40"} fill={fur} stroke={furDark} strokeWidth="1" />
+        <polygon points="30,40 34,26 41,38" fill={shade(fur, 0.15)} />
+        <polygon points="70,40 66,26 59,38" fill={shade(fur, 0.15)} />
+        {earTuft && (
+          <>
+            <path d="M32,18 q-4,-4 -1,-8" stroke={furDark} strokeWidth="1.5" fill="none" />
+            <path d="M68,18 q4,-4 1,-8" stroke={furDark} strokeWidth="1.5" fill="none" />
+          </>
+        )}
+      </g>
 
       {/* Head */}
       <ellipse cx="50" cy="56" rx="30" ry="27" fill={fur} stroke={furDark} strokeWidth="1.5" />
@@ -75,15 +77,17 @@ export function CatPortrait({ appearance, cosmetics = [], size = 72, dimmed, tur
 
       {/* Muzzle */}
       <ellipse cx="50" cy="66" rx="13" ry="10" fill={shade(fur, 0.22)} />
-      {/* Eyes */}
-      <ellipse cx="40" cy="55" rx="6" ry="7" fill="#0d0f12" />
-      <ellipse cx="60" cy="55" rx="6" ry="7" fill="#0d0f12" />
-      <ellipse cx="40" cy="55" rx="4.5" ry="5.5" fill={eye} />
-      <ellipse cx="60" cy="55" rx="4.5" ry="5.5" fill={eye} />
-      <ellipse cx="40" cy="55" rx="1.4" ry="4.5" fill="#0b0d10" />
-      <ellipse cx="60" cy="55" rx="1.4" ry="4.5" fill="#0b0d10" />
-      <circle cx="41.5" cy="53" r="1" fill="#fff" opacity="0.8" />
-      <circle cx="61.5" cy="53" r="1" fill="#fff" opacity="0.8" />
+      {/* Eyes (blink) */}
+      <g className="spr a-blink" style={{ transformOrigin: "50px 55px" }}>
+        <ellipse cx="40" cy="55" rx="6" ry="7" fill="#0d0f12" />
+        <ellipse cx="60" cy="55" rx="6" ry="7" fill="#0d0f12" />
+        <ellipse cx="40" cy="55" rx="4.5" ry="5.5" fill={eye} />
+        <ellipse cx="60" cy="55" rx="4.5" ry="5.5" fill={eye} />
+        <ellipse cx="40" cy="55" rx="1.4" ry="4.5" fill="#0b0d10" />
+        <ellipse cx="60" cy="55" rx="1.4" ry="4.5" fill="#0b0d10" />
+        <circle cx="41.5" cy="53" r="1" fill="#fff" opacity="0.8" />
+        <circle cx="61.5" cy="53" r="1" fill="#fff" opacity="0.8" />
+      </g>
 
       {/* Nose + mouth */}
       <polygon points="50,62 46,65 54,65" fill="#caa" />

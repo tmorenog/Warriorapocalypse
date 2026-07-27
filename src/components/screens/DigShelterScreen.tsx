@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import type { GameController } from "@/game/useGameController";
 import { Scene } from "@/components/art/Scene";
-import { CatPortrait } from "@/components/art/CatPortrait";
+import { CatSprite } from "@/components/art/CatSprite";
 import { Button } from "@/components/ui/primitives";
 
 export function DigShelterScreen({ ctx }: { ctx: GameController }) {
@@ -39,14 +39,16 @@ export function DigShelterScreen({ ctx }: { ctx: GameController }) {
     <div className="mx-auto max-w-3xl px-4 py-6">
       <h1 className="mb-3 text-center font-display text-2xl text-parchment">Dig the Shelter</h1>
       <Scene weather={run.weather} variant="den" height={220}>
-        <div className="flex h-full items-end justify-center gap-2 pb-4">
+        <div className="flex h-full items-end justify-center gap-1 pb-3 sm:gap-2">
           {run.cats.filter((c) => c.alive).map((c, i) => (
-            <div
-              key={c.id}
-              className={digging ? "animate-pulse-soft" : ""}
-              style={{ transform: digging ? `translateY(${(i % 2) * 4}px)` : undefined }}
-            >
-              <CatPortrait appearance={c.appearance} cosmetics={c.cosmetics} size={46} />
+            <div key={c.id} style={{ transform: `translateY(${(i % 2) * 3}px)` }}>
+              <CatSprite
+                appearance={c.appearance}
+                cosmetics={c.cosmetics}
+                size={74}
+                facing={i % 2 ? "left" : "right"}
+                action={digging ? "walk" : "idle"}
+              />
             </div>
           ))}
         </div>
