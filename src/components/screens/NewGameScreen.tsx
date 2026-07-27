@@ -5,31 +5,55 @@ import { BOOK_CHARACTERS } from "@/data/characters";
 import { CLANS } from "@/data/clans";
 import { DIFFICULTY_PRESETS } from "@/config/balance";
 import { CatPortrait } from "@/components/art/CatPortrait";
+import { CatSprite } from "@/components/art/CatSprite";
 import { Button, Panel, Badge, Modal } from "@/components/ui/primitives";
 import { CustomCatCreator } from "./CustomCatCreator";
 
-const REQUIRED: RoleId[] = ["Leader", "Deputy", "Warrior", "Medicine", "Kit"];
+const ADULT_ROLES: RoleId[] = ["Leader", "Deputy", "Warrior", "Medicine"];
 
+// Assign the five clan roles WITHOUT ever mislabeling an adult as a Kit.
+// The Kit role is only given to a real kit; the four adults fill Leader,
+// Deputy, Warrior and Medicine (natural role first, then whatever is missing).
 function assignRoles(defs: CharacterDef[]): CharacterDef[] {
-  const used = new Array(defs.length).fill(false);
-  const result: (RoleId | null)[] = new Array(defs.length).fill(null);
-  const remaining = new Set<RoleId>(REQUIRED);
-  for (const role of REQUIRED) {
-    const idx = defs.findIndex((d, i) => !used[i] && d.role === role);
-    if (idx >= 0) {
-      used[idx] = true;
-      result[idx] = role;
-      remaining.delete(role);
+  const kits = defs.filter((d) => d.role === "Kit");
+  const adults = defs.filter((d) => d.role !== "Kit");
+
+  const assignedAdults: CharacterDef[] = [];
+  const usedRoles = new Set<RoleId>();
+  // First pass: keep each adult's natural role if it's still free.
+  const pending: CharacterDef[] = [];
+  for (const a of adults) {
+    if (ADULT_ROLES.includes(a.role) && !usedRoles.has(a.role)) {
+      usedRoles.add(a.role);
+      assignedAdults.push(a);
+    } else {
+      pending.push(a);
     }
   }
-  const leftover = [...remaining];
-  for (let i = 0; i < defs.length; i++) {
-    if (!used[i]) {
-      result[i] = leftover.shift() ?? defs[i].role;
-      used[i] = true;
-    }
-  }
-  return defs.map((d, i) => ({ ...d, role: result[i]! }));
+  // Second pass: fill any missing adult roles from leftover adults.
+  const missing = ADULT_ROLES.filter((r) => !usedRoles.has(r));
+  pending.forEach((a, i) => {
+    const role = missing[i] ?? a.role;
+    assignedAdults.push({ ...a, role });
+  });
+
+  // Kits keep the Kit role.
+  const assignedKits = kits.map((k) => ({ ...k, role: "Kit" as RoleId }));
+
+  // Preserve original ordering (main cat first).
+  const byId = new Map<string, CharacterDef>();
+  [...assignedAdults, ...assignedKits].forEach((c) => byId.set(c.id, c));
+  return defs.map((d) => byId.get(d.id) ?? d);
+}
+
+// A valid group = exactly one Kit and four adults.
+function groupValidity(main: CharacterDef | null, mates: CharacterDef[]): { ok: boolean; reason: string } {
+  if (!main || mates.length !== 4) return { ok: false, reason: "Pick your cat and 4 clanmates." };
+  const group = [main, ...mates];
+  const kits = group.filter((c) => c.role === "Kit").length;
+  if (kits === 0) return { ok: false, reason: "Your group needs exactly one kit (a young cat)." };
+  if (kits > 1) return { ok: false, reason: "Only one kit can join the group." };
+  return { ok: true, reason: "" };
 }
 
 export function NewGameScreen({ ctx }: { ctx: GameController }) {
@@ -46,7 +70,8 @@ export function NewGameScreen({ ctx }: { ctx: GameController }) {
     });
   };
 
-  const canStart = mainCat && clanmates.length === 4;
+  const validity = groupValidity(mainCat, clanmates);
+  const canStart = validity.ok;
 
   const start = () => {
     if (!mainCat || clanmates.length !== 4) return;
@@ -94,6 +119,10 @@ export function NewGameScreen({ ctx }: { ctx: GameController }) {
       </Panel>
 
       <Panel title={`Choose 4 Clanmates (${clanmates.length}/4)`} className="mb-4">
+        <p className="mb-2 text-xs text-parchment/60">
+          Your group of five needs a Leader, Deputy, Warrior, Medicine cat, and one <strong className="text-fern">Kit</strong> (a young cat).
+          Adult roles are sorted out automatically — just make sure exactly one kit comes along.
+        </p>
         <CharacterGrid
           characters={BOOK_CHARACTERS.filter((c) => c.id !== mainCat?.id)}
           selectedIds={clanmates.map((c) => c.id)}
@@ -101,26 +130,26 @@ export function NewGameScreen({ ctx }: { ctx: GameController }) {
         />
       </Panel>
 
-      {canStart && (
-        <Panel title="Group Roles" className="mb-4">
-          <div className="flex flex-wrap gap-2">
-            {assignRoles([mainCat!, ...clanmates]).map((c) => (
-              <div key={c.id} className="flex items-center gap-2 rounded-lg border border-fern/20 bg-black/20 p-2">
-                <CatPortrait appearance={c.appearance} size={34} />
-                <div className="text-xs">
+      {mainCat && clanmates.length === 4 && (
+        <Panel title="Your Clan" className="mb-4">
+          <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 md:grid-cols-5">
+            {assignRoles([mainCat, ...clanmates]).map((c) => (
+              <div key={c.id} className="flex flex-col items-center rounded-lg border border-fern/20 bg-black/20 p-2">
+                <CatSprite appearance={c.appearance} size={72} action={c.role === "Kit" ? "idle" : "walk"} />
+                <div className="mt-1 text-center text-xs">
                   <div className="font-semibold text-parchment">{c.name}</div>
                   <Badge color={CLANS[c.clan].color}>{c.role}</Badge>
                 </div>
               </div>
             ))}
           </div>
-          <p className="mt-2 text-xs text-parchment/60">Roles are auto-assigned to fill Leader, Deputy, Warrior, Medicine, and Kit.</p>
+          {!validity.ok && <p className="mt-2 text-xs text-ember">{validity.reason}</p>}
         </Panel>
       )}
 
       <div className="sticky bottom-0 -mx-4 border-t border-fern/20 bg-night/95 px-4 py-3">
         <Button variant="primary" className="w-full" disabled={!canStart} onClick={start}>
-          {canStart ? "Begin the Struggle to Survive" : "Pick your cat and 4 clanmates"}
+          {canStart ? "Begin the Struggle to Survive" : validity.reason}
         </Button>
       </div>
 
