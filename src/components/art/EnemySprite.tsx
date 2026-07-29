@@ -71,9 +71,15 @@ export function EnemySprite({ enemyDefId, size = 96, facing = "left", action = "
       aria-label={`Enemy: ${enemyDefId}`}
       style={{ opacity: dimmed ? 0.4 : 1, overflow: "visible" }}
     >
+      <defs>
+        <filter id={`ewob-${enemyDefId}`} x="-15%" y="-15%" width="130%" height="130%">
+          <feTurbulence type="fractalNoise" baseFrequency="0.02" numOctaves={2} seed={enemyDefId.length * 7 + 3} result="n" />
+          <feDisplacementMap in="SourceGraphic" in2="n" scale="2.2" xChannelSelector="R" yChannelSelector="G" />
+        </filter>
+      </defs>
       <ellipse cx="60" cy="86" rx="40" ry="6" fill="#000" opacity="0.3" />
       <g transform={facing === "left" ? "translate(120,0) scale(-1,1)" : undefined}>
-        <g className={`spr ${rootAnim}`} style={{ transformOrigin: "60px 60px" }}>
+        <g className={`spr ${rootAnim}`} style={{ transformOrigin: "60px 60px" }} filter={`url(#ewob-${enemyDefId})`}>
           <g transform={`translate(60 56) scale(${look.scale}) translate(-60 -56)`}>
             {/* Tail */}
             {look.tail !== "none" && (
