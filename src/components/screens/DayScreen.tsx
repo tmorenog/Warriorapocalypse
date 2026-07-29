@@ -10,9 +10,8 @@ import { WEATHER_EFFECTS } from "@/config/balance";
 import { estimateMission } from "@/engine/missions";
 import { kitMissionAllowed } from "@/engine/multiplayer";
 import { computeUpgradeEffects } from "@/engine/gameState";
-import { Scene } from "@/components/art/Scene";
 import { CatPortrait } from "@/components/art/CatPortrait";
-import { CatSprite } from "@/components/art/CatSprite";
+import { CampScene } from "@/components/art/CampScene";
 import { MeterBar } from "@/components/ui/MeterBar";
 import { Button, Panel, Badge, Modal } from "@/components/ui/primitives";
 
@@ -42,19 +41,18 @@ export function DayScreen({ ctx }: { ctx: GameController }) {
       <div className="mt-3 grid grid-cols-1 gap-3 lg:grid-cols-[1fr_320px]">
         {/* Left: scene + roster + selected */}
         <div className="space-y-3">
-          <Scene weather={run.weather} variant={run.shelter.built ? "den" : "forest"} height={200}>
-            <div className="flex h-full flex-col justify-between p-3">
-              <div className="flex flex-wrap gap-1">
-                <Badge color={CLANS[selected.clan].color}>{WEATHER_EFFECTS[run.weather].label}</Badge>
-                <Badge>{run.shelter.built ? "Sheltered" : "Exposed"}</Badge>
-              </div>
-              <p className="max-w-md rounded bg-black/45 px-2 py-1 text-xs text-parchment/90">
-                {WEATHER_EFFECTS[run.weather].description} {run.log[0]?.text}
-              </p>
-            </div>
-            {/* Living cats wandering the camp */}
-            <SceneCats cats={run.cats} />
-          </Scene>
+          <CampScene
+            cats={run.cats}
+            day={run.day}
+            coins={ctx.meta?.coins ?? 0}
+            selectedCatId={run.selectedCatId}
+            onSelectCat={ctx.selectCat}
+          />
+          <div className="flex flex-wrap items-center gap-2 text-xs">
+            <Badge color={CLANS[selected.clan].color}>{WEATHER_EFFECTS[run.weather].label}</Badge>
+            <Badge>{run.shelter.built ? "Sheltered" : "Exposed"}</Badge>
+            <span className="min-w-0 flex-1 truncate text-parchment/75">{run.log[0]?.text}</span>
+          </div>
 
           {/* Cat roster (scrollable) */}
           <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-thin">
@@ -170,33 +168,6 @@ function CatChip({ cat, selected, onSelect }: { cat: Cat; selected: boolean; onS
   );
 }
 
-// Living cats wandering at the bottom of the main scene — some pace, some rest.
-function SceneCats({ cats }: { cats: Cat[] }) {
-  const present = cats.filter((c) => c.alive && !c.onMission && !c.isEnemyTurned).slice(0, 4);
-  const spots = ["6%", "30%", "56%", "78%"];
-  return (
-    <div className="pointer-events-none absolute inset-x-0 bottom-1 h-16">
-      {present.map((c, i) => {
-        const pacing = i === 0;
-        return (
-          <div
-            key={c.id}
-            className={`absolute bottom-0 ${pacing ? "a-pace spr" : ""}`}
-            style={{ left: spots[i], animationDelay: `${i * 0.6}s`, transformOrigin: "center" }}
-          >
-            <CatSprite
-              appearance={c.appearance}
-              cosmetics={c.cosmetics}
-              size={58}
-              facing={i % 2 ? "left" : "right"}
-              action={pacing ? "walk" : "idle"}
-            />
-          </div>
-        );
-      })}
-    </div>
-  );
-}
 
 function SelectedCatPanel({ ctx, cat }: { ctx: GameController; cat: Cat }) {
   return (
