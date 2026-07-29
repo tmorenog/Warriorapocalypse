@@ -2,6 +2,7 @@ import React from "react";
 import type { GameController } from "@/game/useGameController";
 import { Scene } from "@/components/art/Scene";
 import { CatSprite } from "@/components/art/CatSprite";
+import { APP_VERSION } from "@/version";
 
 const MENU: { key: string; label: string; screen?: string; action?: string; primary?: boolean }[] = [
   { label: "New Single-Player Game", action: "new", key: "new", primary: true },
@@ -38,6 +39,7 @@ export function TitleScreen({ ctx }: { ctx: GameController }) {
       <div className="mt-3 flex items-center justify-between px-1">
         <span className="text-sm text-parchment/70">
           Best: {ctx.meta?.stats.bestDays ?? 0} days
+          <span className="ml-2 text-[10px] text-parchment/40">v{APP_VERSION}</span>
         </span>
         <span className="rounded-full bg-ember/20 px-3 py-1 text-sm font-semibold text-ember">
           🪙 {coins} coins
