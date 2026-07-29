@@ -162,7 +162,7 @@ function CatChip({ cat, selected, onSelect }: { cat: Cat; selected: boolean; onS
         selected ? "border-ember bg-ember/20" : "border-fern/20 bg-black/25"
       } ${!cat.alive ? "opacity-40" : ""}`}
     >
-      <CatPortrait appearance={cat.appearance} cosmetics={cat.cosmetics} size={44} dimmed={!cat.alive} turned={cat.isEnemyTurned} />
+      <CatPortrait appearance={cat.appearance} role={cat.role} cosmetics={cat.cosmetics} size={44} dimmed={!cat.alive} turned={cat.isEnemyTurned} />
       <span className="mt-0.5 truncate text-[11px] font-semibold text-parchment">{cat.name}</span>
       <span className="text-[9px] text-parchment/60">{cat.role}{cat.onMission ? " · away" : ""}</span>
       <div className="mt-1 w-full"><MeterBar kind="health" value={cat.meters.health} compact /></div>
@@ -186,6 +186,7 @@ function SceneCats({ cats }: { cats: Cat[] }) {
           >
             <CatSprite
               appearance={c.appearance}
+              role={c.role}
               cosmetics={c.cosmetics}
               size={58}
               facing={i % 2 ? "left" : "right"}
@@ -202,7 +203,7 @@ function SelectedCatPanel({ ctx, cat }: { ctx: GameController; cat: Cat }) {
   return (
     <Panel title={`${cat.name} — ${cat.role} of ${cat.clan}`}>
       <div className="flex gap-3">
-        <CatPortrait appearance={cat.appearance} cosmetics={cat.cosmetics} size={70} dimmed={!cat.alive} turned={cat.isEnemyTurned} />
+        <CatPortrait appearance={cat.appearance} role={cat.role} cosmetics={cat.cosmetics} size={70} dimmed={!cat.alive} turned={cat.isEnemyTurned} />
         <div className="flex-1 space-y-1">
           <MeterBar kind="health" value={cat.meters.health} />
           <MeterBar kind="hunger" value={cat.meters.hunger} />
@@ -218,7 +219,7 @@ function SelectedCatPanel({ ctx, cat }: { ctx: GameController; cat: Cat }) {
       </div>
       {cat.meters.infection > 0 && cat.alive && (
         <div className="mt-2">
-          <p className="mb-1 text-[11px] text-parchment/70">Treat infection with the medicine cat:</p>
+          <p className="mb-1 text-[11px] text-parchment/70">Treat infection with the Elder:</p>
           <div className="flex flex-wrap gap-1">
             <Button className="px-2 py-1 text-xs" onClick={() => ctx.treatCat(cat.id)}>Basic care</Button>
             {HERBS.slice(0, 4).map((h) => (
@@ -366,7 +367,7 @@ function MissionsInline({ ctx }: { ctx: GameController }) {
               onClick={() => toggle(c.id)}
               className={`flex items-center gap-1 rounded border p-1 text-left text-[11px] ${selectedCats.includes(c.id) ? "border-ember bg-ember/20" : "border-fern/20 bg-black/20"}`}
             >
-              <CatPortrait appearance={c.appearance} size={26} />
+              <CatPortrait appearance={c.appearance} role={c.role} size={26} />
               <span className="truncate">{c.name} <span className="text-parchment/50">({c.role})</span></span>
             </button>
           ))}
@@ -380,7 +381,7 @@ function MissionsInline({ ctx }: { ctx: GameController }) {
           <div className="text-parchment/50">Exact outcomes are never guaranteed.</div>
         </div>
       )}
-      {!kitOk && <p className="text-xs text-red-300">The kit cannot go without a Leader, Deputy, Warrior, or Medicine cat.</p>}
+      {!kitOk && <p className="text-xs text-red-300">The kit cannot go without a Leader, Deputy, Warrior, or Elder.</p>}
 
       <Button variant="primary" className="w-full" disabled={chosen.length === 0 || !kitOk} onClick={confirm}>
         Send on Mission

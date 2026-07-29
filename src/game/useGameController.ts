@@ -441,7 +441,7 @@ export function useGameController() {
     (patientId: string, herbId?: string) => {
       setRun((r) => {
         if (!r) return r;
-        const medic = r.cats.find((c) => c.alive && c.role === "Medicine") ?? r.cats.find((c) => c.alive);
+        const medic = r.cats.find((c) => c.alive && c.role === "Elder") ?? r.cats.find((c) => c.alive);
         const patient = r.cats.find((c) => c.id === patientId);
         if (!medic || !patient || patient.meters.infection <= 0) return r;
         const rng = new Rng(r.rngState + 77);

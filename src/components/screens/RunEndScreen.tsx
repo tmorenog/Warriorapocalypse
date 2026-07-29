@@ -47,7 +47,7 @@ export function RunEndScreen({ ctx }: { ctx: GameController }) {
           <div className="flex flex-wrap gap-2">
             {survivors.map((c) => (
               <div key={c.id} className="flex items-center gap-1 rounded bg-black/25 p-1 text-xs">
-                <CatPortrait appearance={c.appearance} cosmetics={c.cosmetics} size={30} />
+                <CatPortrait appearance={c.appearance} role={c.role} cosmetics={c.cosmetics} size={30} />
                 <span>{c.name} <span className="text-parchment/50">({c.role})</span></span>
               </div>
             ))}

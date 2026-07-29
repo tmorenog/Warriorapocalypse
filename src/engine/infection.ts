@@ -43,7 +43,7 @@ export interface TreatmentResult {
   message: string;
 }
 
-// Attempts to treat infection with a medicine cat's skill + optional herb bonus.
+// Attempts to treat infection with the Elder's skill + optional herb bonus.
 // Returns success flag and the updated cat. RNG roll is supplied by the caller (0-1).
 export function treatInfection(
   patient: Cat,

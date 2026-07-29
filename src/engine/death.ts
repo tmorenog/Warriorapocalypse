@@ -39,7 +39,7 @@ export function lethalCauseFromMeters(cat: Cat): string | null {
 }
 
 // Order of succession when the leader is lost.
-const SUCCESSION_ORDER: RoleId[] = ["Deputy", "Warrior", "Medicine", "Kit"];
+const SUCCESSION_ORDER: RoleId[] = ["Deputy", "Warrior", "Elder", "Kit"];
 
 export interface SuccessionResult {
   cats: Cat[];
@@ -73,7 +73,7 @@ export function resolveSuccession(cats: Cat[]): SuccessionResult {
   const needsDeputy = !next.some((c) => c.alive && c.role === "Deputy");
   if (needsDeputy) {
     const eligible = next.find(
-      (c) => c.alive && c.id !== promotedId && (c.role === "Warrior" || c.role === "Medicine"),
+      (c) => c.alive && c.id !== promotedId && (c.role === "Warrior" || c.role === "Elder"),
     );
     if (eligible) {
       next = next.map((c) =>

@@ -28,9 +28,9 @@ export function TitleScreen({ ctx }: { ctx: GameController }) {
           <p className="mt-1 text-sm text-fern">Survive the infection. Protect your clan.</p>
           <div className="mt-1 flex items-end gap-4">
             <div className="a-pace spr" style={{ transformOrigin: "center" }}>
-              <CatSprite appearance={{ furColor: "#d9622a", furPattern: "solid", eyeColor: "#4a8f3c", scars: "none", accessory: "none", bodyType: "medium", earShape: "pointed", tailStyle: "medium" }} size={62} action="walk" />
+              <CatSprite role="Leader" appearance={{ furColor: "#d9622a", furPattern: "solid", eyeColor: "#4a8f3c", scars: "none", accessory: "none", bodyType: "medium", earShape: "pointed", tailStyle: "medium" }} size={72} />
             </div>
-            <CatSprite appearance={{ furColor: "#5a5b60", furPattern: "tabby", eyeColor: "#d67a2a", scars: "ear", accessory: "none", bodyType: "large", earShape: "tufted", tailStyle: "fluffy" }} size={62} facing="left" action="idle" />
+            <CatSprite role="Warrior" appearance={{ furColor: "#5a5b60", furPattern: "tabby", eyeColor: "#d67a2a", scars: "ear", accessory: "none", bodyType: "large", earShape: "tufted", tailStyle: "fluffy" }} size={72} facing="left" />
           </div>
         </div>
       </Scene>
@@ -68,7 +68,7 @@ export function TitleScreen({ ctx }: { ctx: GameController }) {
       <p className="mt-6 rounded-lg border border-fern/20 bg-black/30 p-3 text-center text-[11px] leading-relaxed text-parchment/60">
         <strong>Disclaimer:</strong> This is an unofficial, fan-created game inspired by the world of
         the <em>Warriors</em> books. It is not affiliated with, endorsed by, or sponsored by the
-        books&rsquo; authors or publishers. All artwork here is original and procedurally generated;
+        books&rsquo; authors or publishers. All artwork here is original, hand-drawn for this game;
         no official illustrations, logos, or text are used.
       </p>
     </div>

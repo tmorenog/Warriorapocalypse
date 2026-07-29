@@ -50,15 +50,15 @@ export const ROLES: Record<RoleId, RoleDef> = {
     statBias: { attack: 5, defense: 3, hunting: 3 },
     meterBias: { health: 8 },
   },
-  Medicine: {
-    id: "Medicine",
-    name: "Medicine Cat",
-    summary: "Treats wounds and reduces infection.",
+  Elder: {
+    id: "Elder",
+    name: "Elder",
+    summary: "Tends wounds with old remedies and shares hard-won wisdom.",
     abilities: [
-      "Treats wounds",
+      "Treats wounds with old remedies",
       "Reduces early infection",
       "Identifies contaminated food and water",
-      "Uses herbs during and outside battle",
+      "Shares wisdom that steadies the group",
     ],
     statBias: { medicine: 6, defense: 1 },
     meterBias: { energy: 4 },
@@ -80,7 +80,7 @@ export const ROLES: Record<RoleId, RoleDef> = {
 };
 
 export const ROLE_LIST = Object.values(ROLES);
-export const REQUIRED_ROLES: RoleId[] = ["Leader", "Deputy", "Warrior", "Medicine", "Kit"];
+export const REQUIRED_ROLES: RoleId[] = ["Leader", "Deputy", "Warrior", "Elder", "Kit"];
 
 // Roles that can protect / escort a kit on a mission.
-export const KIT_GUARDIAN_ROLES: RoleId[] = ["Leader", "Deputy", "Warrior", "Medicine"];
+export const KIT_GUARDIAN_ROLES: RoleId[] = ["Leader", "Deputy", "Warrior", "Elder"];

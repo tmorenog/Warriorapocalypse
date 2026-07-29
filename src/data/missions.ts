@@ -40,7 +40,7 @@ export const MISSIONS: MissionDef[] = [
     name: "Gather Herbs",
     description: "Collect healing herbs from the forest.",
     baseDays: 0, relevantSkill: "medicine", rewardHint: "Herbs",
-    riskHint: "Unsafe herbs", recommendedRoles: ["Medicine"], terrain: "forest", canBattle: false,
+    riskHint: "Unsafe herbs", recommendedRoles: ["Elder"], terrain: "forest", canBattle: false,
     loot: [{ itemId: "herb_kit", weight: 4 }, { itemId: "cobwebs", weight: 3 }, { itemId: "leaves", weight: 2 }],
   },
   {

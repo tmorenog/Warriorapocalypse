@@ -66,6 +66,7 @@ export function BattleScreen({ ctx }: { ctx: GameController }) {
                   {cat ? (
                     <CatSprite
                       appearance={cat.appearance}
+                      role={cat.role}
                       cosmetics={cat.cosmetics}
                       size={70}
                       facing="right"

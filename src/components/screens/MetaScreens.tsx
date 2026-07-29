@@ -31,7 +31,7 @@ export function CollectionScreen({ ctx }: { ctx: GameController }) {
       <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 md:grid-cols-4">
         {BOOK_CHARACTERS.map((c) => (
           <button key={c.id} onClick={() => setDetail(c.id)} className="flex flex-col items-center rounded-lg border border-fern/20 bg-black/20 p-2 hover:bg-black/40">
-            <CatPortrait appearance={c.appearance} size={56} />
+            <CatPortrait appearance={c.appearance} role={c.role} size={56} />
             <span className="mt-1 text-sm font-semibold text-parchment">{c.name}</span>
             <span className="text-[10px]" style={{ color: CLANS[c.clan].color }}>{c.clan} · {c.role}</span>
           </button>
@@ -40,7 +40,7 @@ export function CollectionScreen({ ctx }: { ctx: GameController }) {
       {cat && (
         <Panel title={`${cat.name} — ${cat.role} of ${cat.clan}`} className="mt-4">
           <div className="flex gap-3">
-            <CatPortrait appearance={cat.appearance} size={80} />
+            <CatPortrait appearance={cat.appearance} role={cat.role} size={80} />
             <div className="text-xs text-parchment/80">
               <p className="italic">{cat.description}</p>
               <div className="mt-2 flex flex-wrap gap-1">
@@ -152,10 +152,10 @@ export function HowToPlayScreen({ ctx }: { ctx: GameController }) {
         </Section>
         <Section title="Missions">
           Send cats to hunt, gather herbs, find water, rescue survivors, and more. More cats mean better
-          odds but more risk and energy. The kit can never leave without a Leader, Deputy, Warrior, or Medicine cat.
+          odds but more risk and energy. The kit can never leave without a Leader, Deputy, Warrior, or Elder.
         </Section>
         <Section title="Infection & Battles">
-          Bites and contaminated food spread infection through five stages. Your medicine cat can treat it —
+          Bites and contaminated food spread infection through five stages. Your Elder can treat it —
           early is easiest. Battles are turn-based: attack, defend, use abilities, heal, or escape.
         </Section>
         <Section title="Clans">
@@ -273,7 +273,7 @@ export function CreditsScreen({ ctx }: { ctx: GameController }) {
       <Header ctx={ctx} title="Credits" />
       <Panel className="space-y-3 text-sm text-parchment/85">
         <p><b>Warrior Apocalypse</b> — a fan-made survival game built with Next.js, TypeScript, React, and Tailwind CSS.</p>
-        <p>All artwork is original and procedurally generated with SVG and CSS. Game design, systems, and code created for this project.</p>
+        <p>Cat artwork hand-drawn by <b>Aina</b>, recolored in-game to each player&rsquo;s chosen fur color and pattern. All artwork is original. Game design, systems, and code created for this project.</p>
         <div className="rounded-lg border border-fern/20 bg-black/30 p-3 text-[12px] leading-relaxed text-parchment/70">
           <b>Disclaimer:</b> This is an unofficial, fan-created game inspired by the world of the
           <em> Warriors</em> books. It is not affiliated with, endorsed by, or sponsored by the books&rsquo;

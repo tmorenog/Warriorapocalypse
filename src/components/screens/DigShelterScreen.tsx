@@ -44,6 +44,7 @@ export function DigShelterScreen({ ctx }: { ctx: GameController }) {
             <div key={c.id} style={{ transform: `translateY(${(i % 2) * 3}px)` }}>
               <CatSprite
                 appearance={c.appearance}
+                role={c.role}
                 cosmetics={c.cosmetics}
                 size={74}
                 facing={i % 2 ? "left" : "right"}

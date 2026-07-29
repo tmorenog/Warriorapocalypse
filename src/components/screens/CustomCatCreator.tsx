@@ -71,7 +71,7 @@ export function CustomCatCreator({ onConfirm, onCancel }: Props) {
   return (
     <div>
       <div className="flex flex-col items-center gap-2">
-        <CatPortrait appearance={appearance} size={100} />
+        <CatPortrait appearance={appearance} role={role} size={100} />
         <input
           value={name}
           onChange={(e) => setName(e.target.value)}

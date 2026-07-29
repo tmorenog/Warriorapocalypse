@@ -8,7 +8,7 @@ export type ClanId =
   | "ShadowClan"
   | "SkyClan";
 
-export type RoleId = "Leader" | "Deputy" | "Warrior" | "Medicine" | "Kit";
+export type RoleId = "Leader" | "Deputy" | "Warrior" | "Elder" | "Kit";
 
 export type Difficulty = "Story" | "Normal" | "Hard" | "EndlessNightmare";
 

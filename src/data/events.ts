@@ -60,10 +60,10 @@ export const RANDOM_EVENTS: RandomEventDef[] = [
   {
     id: "bad_water",
     title: "The Water Smells Wrong",
-    text: "Your medicine cat believes the water source may be contaminated.",
+    text: "Your Elder believes the water source may be contaminated.",
     weight: 3,
     options: [
-      { id: "avoid", label: "Ask the medicine cat to find another source", outcomes: [
+      { id: "avoid", label: "Ask the Elder to find another source", outcomes: [
         ok("A clean trickle is found nearby.", [{ kind: "addItem", itemId: "fresh_water", quantity: 1 }], 3),
         ok("The search turns up nothing.", [{ kind: "log", text: "No clean water is found today." }], 2),
       ] },
@@ -123,7 +123,7 @@ export const RANDOM_EVENTS: RandomEventDef[] = [
   {
     id: "prey_smells_wrong",
     title: "Tainted Prey",
-    text: "One of the prey animals smells wrong to the medicine cat.",
+    text: "One of the prey animals smells wrong to the Elder.",
     weight: 3,
     options: [
       { id: "discard", label: "Discard it to be safe", outcomes: [
@@ -156,7 +156,7 @@ export const RANDOM_EVENTS: RandomEventDef[] = [
     text: "A clanmate is hiding a wound, afraid of being seen as weak.",
     weight: 3,
     options: [
-      { id: "treat", label: "Have the medicine cat treat it", outcomes: [
+      { id: "treat", label: "Have the Elder treat it", outcomes: [
         ok("The wound is cleaned before it can fester.", [{ kind: "meterMain", meter: "health", delta: 8 }], 3),
       ] },
       { id: "leave", label: "Respect their pride and leave it", outcomes: [
@@ -240,7 +240,7 @@ export const RANDOM_EVENTS: RandomEventDef[] = [
   {
     id: "drought_warning",
     title: "The Streams Run Low",
-    text: "The medicine cat warns that water is growing scarce.",
+    text: "The Elder warns that water is growing scarce.",
     weight: 2,
     minDay: 5,
     options: [
@@ -274,8 +274,8 @@ export const RANDOM_EVENTS: RandomEventDef[] = [
     text: "The kit found bright red berries and wants to eat them.",
     weight: 2,
     options: [
-      { id: "stop", label: "Have the medicine cat check them", outcomes: [
-        ok("Deathberries! The medicine cat forbids them.", [{ kind: "discovery", id: "deathberries", text: "The group learns to avoid deathberries." }], 3),
+      { id: "stop", label: "Have the Elder check them", outcomes: [
+        ok("Deathberries! The Elder forbids them.", [{ kind: "discovery", id: "deathberries", text: "The group learns to avoid deathberries." }], 3),
       ] },
       { id: "allow", label: "Let the kit eat", outcomes: [
         ok("The kit falls terribly ill.", [{ kind: "meterMain", meter: "health", delta: -18 }], 3),

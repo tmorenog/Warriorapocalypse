@@ -9,7 +9,7 @@ import { CatSprite } from "@/components/art/CatSprite";
 import { Button, Panel, Badge, Modal } from "@/components/ui/primitives";
 import { CustomCatCreator } from "./CustomCatCreator";
 
-const ADULT_ROLES: RoleId[] = ["Leader", "Deputy", "Warrior", "Medicine"];
+const ADULT_ROLES: RoleId[] = ["Leader", "Deputy", "Warrior", "Elder"];
 
 // Assign the five clan roles WITHOUT ever mislabeling an adult as a Kit.
 // The Kit role is only given to a real kit; the four adults fill Leader,
@@ -120,7 +120,7 @@ export function NewGameScreen({ ctx }: { ctx: GameController }) {
 
       <Panel title={`Choose 4 Clanmates (${clanmates.length}/4)`} className="mb-4">
         <p className="mb-2 text-xs text-parchment/60">
-          Your group of five needs a Leader, Deputy, Warrior, Medicine cat, and one <strong className="text-fern">Kit</strong> (a young cat).
+          Your group of five needs a Leader, Deputy, Warrior, Elder, and one <strong className="text-fern">Kit</strong> (a young cat).
           Adult roles are sorted out automatically — just make sure exactly one kit comes along.
         </p>
         <CharacterGrid
@@ -135,7 +135,7 @@ export function NewGameScreen({ ctx }: { ctx: GameController }) {
           <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 md:grid-cols-5">
             {assignRoles([mainCat, ...clanmates]).map((c) => (
               <div key={c.id} className="flex flex-col items-center rounded-lg border border-fern/20 bg-black/20 p-2">
-                <CatSprite appearance={c.appearance} size={72} action={c.role === "Kit" ? "idle" : "walk"} />
+                <CatSprite appearance={c.appearance} role={c.role} size={72} />
                 <div className="mt-1 text-center text-xs">
                   <div className="font-semibold text-parchment">{c.name}</div>
                   <Badge color={CLANS[c.clan].color}>{c.role}</Badge>
@@ -193,7 +193,7 @@ function CharacterGrid({
               selected ? "border-ember bg-ember/20" : "border-fern/20 bg-black/20 hover:bg-black/40"
             } ${disabled ? "opacity-30" : ""}`}
           >
-            <CatPortrait appearance={c.appearance} size={40} />
+            <CatPortrait appearance={c.appearance} role={c.role} size={40} />
             <div className="min-w-0">
               <div className="truncate text-sm font-semibold text-parchment">{c.name}</div>
               <div className="truncate text-[11px]" style={{ color: CLANS[c.clan].color }}>
