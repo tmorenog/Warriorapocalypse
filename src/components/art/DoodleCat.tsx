@@ -11,7 +11,6 @@ export interface DoodleCatProps {
   size?: number;
   facing?: "left" | "right";
   action?: DoodleAction;
-  pose?: "sit" | "curl";
   dimmed?: boolean;
   turned?: boolean;
 }
@@ -25,7 +24,6 @@ export function DoodleCat({
   size = 88,
   facing = "right",
   action = "idle",
-  pose = "sit",
   dimmed,
   turned,
 }: DoodleCatProps) {
@@ -36,42 +34,6 @@ export function DoodleCat({
   const eye = turned ? "#c94a4a" : appearance.eyeColor;
   const uid = hashId(fur + appearance.eyeColor + appearance.tailStyle + appearance.scars);
   const seed = (parseInt(uid, 36) % 90) + 1;
-
-  if (pose === "curl") {
-    return (
-      <svg width={size} height={size} viewBox="0 0 100 100" role="img" aria-label="Sleeping cat"
-        style={{ opacity: dimmed ? 0.4 : 1, overflow: "visible" }}>
-        <defs>
-          <filter id={`wobc-${uid}`} x="-15%" y="-15%" width="130%" height="130%">
-            <feTurbulence type="fractalNoise" baseFrequency="0.018" numOctaves={2} seed={seed} result="n" />
-            <feDisplacementMap in="SourceGraphic" in2="n" scale="2.2" xChannelSelector="R" yChannelSelector="G" />
-          </filter>
-        </defs>
-        <ellipse cx="50" cy="78" rx="34" ry="6" fill="#000" opacity="0.18" />
-        <g transform={facing === "left" ? "translate(100,0) scale(-1,1)" : undefined}>
-          <g className="spr a-breathe" style={{ transformOrigin: "50px 62px" }} filter={`url(#wobc-${uid})`}>
-            {/* curled body */}
-            <path d="M20,64 C18,44 40,36 58,40 C76,44 84,58 80,68 C76,78 58,80 44,78 C30,76 22,74 20,64 Z"
-              fill={fur} stroke={line} strokeWidth="2.4" strokeLinejoin="round" />
-            {/* wrapped tail */}
-            <path d="M22,64 C10,60 14,48 26,50" fill="none" stroke={line} strokeWidth="2.4" strokeLinecap="round" />
-            <path d="M24,63 C16,60 18,52 26,53" fill={belly} stroke="none" opacity="0.6" />
-            {/* head resting */}
-            <ellipse cx="66" cy="62" rx="14" ry="12" fill={fur} stroke={line} strokeWidth="2.4" />
-            <path d="M58,54 L55,44 L66,52 Z" fill={fur} stroke={line} strokeWidth="2.4" strokeLinejoin="round" />
-            <path d="M74,54 L78,45 L70,53 Z" fill={fur} stroke={line} strokeWidth="2.4" strokeLinejoin="round" />
-            {/* closed sleeping eyes */}
-            <path d="M60,61 q3,3 6,0" stroke={line} strokeWidth="1.6" fill="none" strokeLinecap="round" />
-            <path d="M69,61 q3,3 6,0" stroke={line} strokeWidth="1.6" fill="none" strokeLinecap="round" />
-            <path d="M77,64 L80,64" stroke={line} strokeWidth="1.4" strokeLinecap="round" />
-            {/* zzz */}
-            <text x="80" y="40" fontSize="9" fill={line} opacity="0.7" fontFamily="ui-sans-serif">z</text>
-            <text x="86" y="33" fontSize="7" fill={line} opacity="0.55" fontFamily="ui-sans-serif">z</text>
-          </g>
-        </g>
-      </svg>
-    );
-  }
 
   const walking = action === "walk";
   const rootAnim = action === "pounce" ? "a-pounce" : action === "hit" || action === "hurt" ? "a-hit" : walking ? "a-bob" : "";
