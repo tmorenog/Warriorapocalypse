@@ -247,16 +247,16 @@ const SEEDS: Seed[] = [
   },
   // ---- Kits (original young cats) ----
   {
-    id: "brightkit",
-    name: "Brightkit",
+    id: "dewkit",
+    name: "Dewkit",
     clan: "ThunderClan",
     role: "Kit",
     health: 58, hunger: 100, thirst: 100, infection: 0, energy: 100,
     attack: 5, defense: 4, hunting: 5, medicine: 3, stealth: 16, speed: 15,
     passive: ["small_paws", "Small Paws", "Can slip into tiny hiding places and find hidden things."],
     battle: ["dart_away", "Dart Away", "Improves the group's escape chance this round."],
-    description: "A tiny, curious ginger-and-white kit with boundless energy and sharp little ears.",
-    appearance: { furColor: "#e0a86a", furPattern: "patched", eyeColor: "#5fa04a", bodyType: "lean", earShape: "rounded", tailStyle: "short" },
+    description: "A tiny, curious ginger kit with boundless energy and sharp little ears.",
+    appearance: { furColor: "#e0a86a", furPattern: "solid", eyeColor: "#5fa04a", bodyType: "lean", earShape: "rounded", tailStyle: "short" },
   },
   {
     id: "pebblekit",

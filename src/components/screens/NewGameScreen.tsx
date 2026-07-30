@@ -9,50 +9,27 @@ import { CatSprite } from "@/components/art/CatSprite";
 import { Button, Panel, Badge, Modal } from "@/components/ui/primitives";
 import { CustomCatCreator } from "./CustomCatCreator";
 
-const ADULT_ROLES: RoleId[] = ["Leader", "Deputy", "Warrior", "Elder"];
+const REQUIRED_5: RoleId[] = ["Leader", "Deputy", "Warrior", "Elder", "Kit"];
 
-// Assign the five clan roles WITHOUT ever mislabeling an adult as a Kit.
-// The Kit role is only given to a real kit; the four adults fill Leader,
-// Deputy, Warrior and Medicine (natural role first, then whatever is missing).
+// Every cat keeps its OWN canonical role — no reassignment. (So a warrior like
+// Ravenpaw is never turned into a Leader.) The player builds a proper clan with
+// one cat of each role.
 function assignRoles(defs: CharacterDef[]): CharacterDef[] {
-  const kits = defs.filter((d) => d.role === "Kit");
-  const adults = defs.filter((d) => d.role !== "Kit");
-
-  const assignedAdults: CharacterDef[] = [];
-  const usedRoles = new Set<RoleId>();
-  // First pass: keep each adult's natural role if it's still free.
-  const pending: CharacterDef[] = [];
-  for (const a of adults) {
-    if (ADULT_ROLES.includes(a.role) && !usedRoles.has(a.role)) {
-      usedRoles.add(a.role);
-      assignedAdults.push(a);
-    } else {
-      pending.push(a);
-    }
-  }
-  // Second pass: fill any missing adult roles from leftover adults.
-  const missing = ADULT_ROLES.filter((r) => !usedRoles.has(r));
-  pending.forEach((a, i) => {
-    const role = missing[i] ?? a.role;
-    assignedAdults.push({ ...a, role });
-  });
-
-  // Kits keep the Kit role.
-  const assignedKits = kits.map((k) => ({ ...k, role: "Kit" as RoleId }));
-
-  // Preserve original ordering (main cat first).
-  const byId = new Map<string, CharacterDef>();
-  [...assignedAdults, ...assignedKits].forEach((c) => byId.set(c.id, c));
-  return defs.map((d) => byId.get(d.id) ?? d);
+  return defs.map((d) => ({ ...d }));
 }
 
-// A valid group = exactly one Kit and four adults.
+// A valid clan has exactly one cat of each of the five roles.
 function groupValidity(main: CharacterDef | null, mates: CharacterDef[]): { ok: boolean; reason: string } {
   if (!main || mates.length !== 4) return { ok: false, reason: "Pick your cat and 4 clanmates." };
-  const group = [main, ...mates];
-  const kits = group.filter((c) => c.role === "Kit").length;
-  if (kits === 0) return { ok: false, reason: "Your group needs exactly one kit (a young cat)." };
-  if (kits > 1) return { ok: false, reason: "Only one kit can join the group." };
+  const counts: Record<string, number> = {};
+  for (const c of [main, ...mates]) counts[c.role] = (counts[c.role] ?? 0) + 1;
+  const missing = REQUIRED_5.filter((r) => !counts[r]);
+  if (missing.length) {
+    const label = missing.map((r) => (r === "Elder" ? "Elder" : r)).join(", ");
+    return { ok: false, reason: `Your clan still needs a ${label}.` };
+  }
+  const dup = REQUIRED_5.find((r) => counts[r] > 1);
+  if (dup) return { ok: false, reason: `Only one ${dup} in a clan — swap one out.` };
   return { ok: true, reason: "" };
 }
 
@@ -120,8 +97,8 @@ export function NewGameScreen({ ctx }: { ctx: GameController }) {
 
       <Panel title={`Choose 4 Clanmates (${clanmates.length}/4)`} className="mb-4">
         <p className="mb-2 text-xs text-parchment/60">
-          Your group of five needs a Leader, Deputy, Warrior, Elder, and one <strong className="text-fern">Kit</strong> (a young cat).
-          Adult roles are sorted out automatically — just make sure exactly one kit comes along.
+          Build a proper clan: exactly one <strong className="text-fern">Leader, Deputy, Warrior, Elder, and Kit</strong>.
+          Every cat keeps its own role — each card shows it below the name.
         </p>
         <CharacterGrid
           characters={BOOK_CHARACTERS.filter((c) => c.id !== mainCat?.id)}
