@@ -66,8 +66,16 @@ function patternZone(
   eyeTop: number,
 ): "base" | "dark" | "light" {
   if (pattern === "bicolor") {
-    if (ry > bh * 0.58) return "light"; // white underside / chest / legs
-    if (Math.abs(rx - eyeCx) < bw * 0.05 && ry > eyeTop - bh * 0.03 && ry < eyeTop + bh * 0.3) return "light"; // face blaze
+    const dxc = Math.abs(rx - eyeCx);
+    // continuous blaze from the face down the chest — narrow on the face,
+    // widening a little toward the chest (not the whole belly/legs)
+    if (ry > eyeTop - bh * 0.03 && ry < eyeTop + bh * 0.5) {
+      const t = Math.max(0, (ry - eyeTop) / (bh * 0.5));
+      const wid = bw * (0.045 + 0.085 * t);
+      if (dxc < wid) return "light";
+    }
+    // white paws / feet (very bottom only)
+    if (ry > bh * 0.9) return "light";
     return "base";
   }
   return patternDark(pattern, rx, ry, bw) ? "dark" : "base";
