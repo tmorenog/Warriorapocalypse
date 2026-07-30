@@ -20,6 +20,7 @@ export interface DrainContext {
   hungerMultiplier?: number; // from upgrades (lower = slower)
   thirstMultiplier?: number;
   weatherEnergyDrain?: number;
+  noHealthDamage?: boolean; // grace period: skip hunger/thirst health damage
 }
 
 // Applies one day's passive drain to a single living cat and returns a NEW cat.
@@ -40,12 +41,15 @@ export function applyDailyDrain(cat: Cat, ctx: DrainContext): Cat {
   thirst -= thirstLoss;
   energy -= energyLoss;
 
-  // Consequences
-  if (thirst <= BALANCE.severeThirstThreshold) {
-    health -= BALANCE.thirstHealthDamage * drain;
-  }
-  if (hunger <= BALANCE.starvationThreshold) {
-    health -= BALANCE.starvationHealthDamage * drain;
+  // Consequences (skipped during the early grace period so new players can't be
+  // wiped out before they've established food and water).
+  if (!ctx.noHealthDamage) {
+    if (thirst <= BALANCE.severeThirstThreshold) {
+      health -= BALANCE.thirstHealthDamage * drain;
+    }
+    if (hunger <= BALANCE.starvationThreshold) {
+      health -= BALANCE.starvationHealthDamage * drain;
+    }
   }
 
   const meters = clampMeters({ ...cat.meters, health, hunger, thirst, energy });

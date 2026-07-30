@@ -125,8 +125,8 @@ export function createRun(config: CreateRunConfig): RunState {
   const clanDef = CLANS[config.mainCatDef.clan];
 
   const inventory: InventoryItem[] = [
-    { itemId: "mouse", quantity: 2 + eff.extraFood, quality: "fresh" },
-    { itemId: "fresh_water", quantity: 2 + eff.extraWater, quality: "fresh" },
+    { itemId: "mouse", quantity: 3 + eff.extraFood, quality: "fresh" },
+    { itemId: "fresh_water", quantity: 3 + eff.extraWater, quality: "fresh" },
     { itemId: "herb_kit", quantity: 1 },
     { itemId: "moss_bedding", quantity: 1 },
   ];
@@ -279,6 +279,7 @@ export function advanceDay(run: RunState, meta: MetaProfile | null): DayAdvanceR
         hungerMultiplier: eff.hungerMultiplier,
         thirstMultiplier: eff.thirstMultiplier,
         weatherEnergyDrain: weatherEff.energyDrain,
+        noHealthDamage: next.day <= 4, // grace period for the first few days
       }),
     ),
   };

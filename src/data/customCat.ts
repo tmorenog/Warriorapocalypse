@@ -17,6 +17,7 @@ export const FUR_PATTERNS = [
   { id: "patched", label: "Patched" },
   { id: "spotted", label: "Spotted" },
   { id: "bicolor", label: "Bicolor (white belly & face)" },
+  { id: "tortoiseshell", label: "Tortoiseshell (spots + white)" },
 ];
 
 export const EYE_COLORS = [

@@ -11,17 +11,20 @@ interface SceneProps {
 
 // Reusable illustrated scene: layered SVG silhouettes + CSS gradients + weather overlay.
 export function Scene({ weather, variant = "forest", night, children, height = 220 }: SceneProps) {
-  const sky = night
-    ? "linear-gradient(180deg,#0a0e17 0%,#141b2a 60%,#1c2433 100%)"
-    : skyFor(weather);
+  const isCave = variant === "den";
+  const sky = isCave
+    ? "linear-gradient(180deg,#2a2320 0%,#1c1613 55%,#120d0a 100%)"
+    : night
+      ? "linear-gradient(180deg,#0a0e17 0%,#141b2a 60%,#1c2433 100%)"
+      : skyFor(weather);
   return (
     <div
       className="relative w-full overflow-hidden rounded-xl border border-fern/20"
       style={{ height, background: sky }}
     >
-      <SunMoon night={night} weather={weather} />
+      {!isCave && <SunMoon night={night} weather={weather} />}
       <SceneSilhouette variant={variant} />
-      <WeatherOverlay weather={weather} />
+      {!isCave && <WeatherOverlay weather={weather} />}
       <div className="relative z-10 h-full">{children}</div>
     </div>
   );
@@ -96,18 +99,51 @@ function SceneSilhouette({ variant }: { variant: string }) {
           ))}
         </g>
       )}
-      {variant === "den" && (
-        <g>
-          <ellipse cx="200" cy="220" rx="150" ry="70" fill="#1a130e" />
-          <ellipse cx="200" cy="215" rx="110" ry="52" fill="#0d0a07" />
-        </g>
-      )}
+      {variant === "den" && <CaveInterior />}
       {variant === "camp" && (
         <ellipse cx="200" cy="210" rx="120" ry="26" fill="#1a130e" opacity="0.6" />
       )}
-      {/* foreground */}
-      <path d="M0,190 Q120,175 240,192 T400,188 L400,220 L0,220 Z" fill="#16201a" />
+      {/* foreground (the cave draws its own floor) */}
+      {variant !== "den" && (
+        <path d="M0,190 Q120,175 240,192 T400,188 L400,220 L0,220 Z" fill="#16201a" />
+      )}
     </svg>
+  );
+}
+
+// A torch-lit cave: rocky ceiling & walls, dark interior, two flickering torches.
+function CaveInterior() {
+  return (
+    <g>
+      {/* rocky ceiling with stalactites */}
+      <path d="M0,0 L400,0 L400,54 Q380,40 360,58 Q345,42 330,60 Q300,44 280,64 Q210,40 150,62 Q110,44 80,60 Q50,44 30,58 Q14,46 0,56 Z" fill="#241c17" />
+      <path d="M0,0 L400,0 L400,34 Q200,20 0,34 Z" fill="#2c231d" />
+      {/* side walls */}
+      <path d="M0,40 Q40,90 24,150 Q40,200 10,220 L0,220 Z" fill="#241c17" />
+      <path d="M400,40 Q360,90 376,150 Q360,200 390,220 L400,220 Z" fill="#241c17" />
+      {/* cave floor */}
+      <path d="M0,196 Q120,182 240,198 T400,192 L400,220 L0,220 Z" fill="#1a1310" />
+      <ellipse cx="200" cy="212" rx="150" ry="18" fill="#0f0b08" opacity="0.7" />
+      {/* torches on the walls */}
+      <CaveTorch x={44} y={96} />
+      <CaveTorch x={356} y={100} />
+      {/* warm glow from the torches */}
+      <ellipse cx="44" cy="96" rx="60" ry="60" fill="#ff9a3c" opacity="0.1" />
+      <ellipse cx="356" cy="100" rx="60" ry="60" fill="#ff9a3c" opacity="0.1" />
+    </g>
+  );
+}
+
+function CaveTorch({ x, y }: { x: number; y: number }) {
+  return (
+    <g>
+      <rect x={x - 2} y={y} width="4" height="26" rx="2" fill="#5a3d22" />
+      <ellipse cx={x} cy={y + 26} rx="7" ry="3" fill="#3a2a18" />
+      <g className="a-flame" style={{ transformOrigin: `${x}px ${y}px` }}>
+        <path d={`M${x},${y - 22} C${x - 8},${y - 6} ${x - 5},${y + 2} ${x},${y + 3} C${x + 5},${y + 2} ${x + 8},${y - 8} ${x},${y - 22} Z`} fill="#e8792a" />
+        <path d={`M${x},${y - 15} C${x - 4},${y - 5} ${x - 2},${y} ${x},${y + 2} C${x + 2},${y} ${x + 4},${y - 6} ${x},${y - 15} Z`} fill="#f6d24a" />
+      </g>
+    </g>
   );
 }
 

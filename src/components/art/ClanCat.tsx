@@ -65,17 +65,16 @@ function patternZone(
   eyeCx: number,
   eyeTop: number,
 ): "base" | "dark" | "light" {
-  if (pattern === "bicolor") {
+  if (pattern === "bicolor" || pattern === "tortoiseshell") {
     const dxc = Math.abs(rx - eyeCx);
-    // continuous blaze from the face down the chest — narrow on the face,
-    // widening a little toward the chest (not the whole belly/legs)
+    // white blaze from the face down the chest + white paws
     if (ry > eyeTop - bh * 0.03 && ry < eyeTop + bh * 0.5) {
       const t = Math.max(0, (ry - eyeTop) / (bh * 0.5));
-      const wid = bw * (0.045 + 0.085 * t);
-      if (dxc < wid) return "light";
+      if (dxc < bw * (0.045 + 0.085 * t)) return "light";
     }
-    // white paws / feet (very bottom only)
     if (ry > bh * 0.9) return "light";
+    // tortoiseshell also gets dark dappled spots over the coloured areas
+    if (pattern === "tortoiseshell" && patternDark("spotted", rx, ry, bw)) return "dark";
     return "base";
   }
   return patternDark(pattern, rx, ry, bw) ? "dark" : "base";

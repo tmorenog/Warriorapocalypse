@@ -255,7 +255,7 @@ const SEEDS: Seed[] = [
     passive: ["scarred_resolve", "Scarred Resolve", "Fights harder after a clanmate is wounded."],
     battle: ["spiteful_strike", "Spiteful Strike", "A savage strike that hits harder against wounded foes."],
     description: "A dappled tortoiseshell-and-white she-cat with a hard amber stare and a heart scarred by old loss.",
-    appearance: { furColor: "#9a5a2e", furPattern: "bicolor", eyeColor: "#c8901f", markingColor: "#eef0ee", bodyType: "medium" },
+    appearance: { furColor: "#9a5a2e", furPattern: "tortoiseshell", eyeColor: "#c8901f", markingColor: "#eef0ee", bodyType: "medium" },
   },
   {
     id: "appledusk",
