@@ -24,34 +24,46 @@ function hex2rgb(hex: string): RGB {
 function darken(c: RGB, amt: number): RGB {
   return { r: Math.round(c.r * (1 - amt)), g: Math.round(c.g * (1 - amt)), b: Math.round(c.b * (1 - amt)) };
 }
-function patternDark(pattern: string, x: number, y: number, bw: number): boolean {
+
+const INK: RGB = { r: 32, g: 27, b: 22 };
+
+// Whether a body pixel takes the darker pattern shade. Periods scale with the
+// cat size so patterns look the same at any resolution.
+function patternDark(pattern: string, rx: number, ry: number, bw: number): boolean {
   switch (pattern) {
-    case "stripe":
-      return x % 16 < 5;
-    case "tabby":
-      return (x + y) % 18 < 5;
+    case "stripe": {
+      const per = Math.max(8, bw * 0.14);
+      return rx % per < per * 0.42;
+    }
+    case "tabby": {
+      const per = Math.max(6, bw * 0.085);
+      const s = rx + Math.sin(ry * 0.06) * per * 0.5;
+      return (((s % per) + per) % per) < per * 0.34;
+    }
     case "spotted": {
-      const gx = (x % 15) - 7;
-      const gy = (y % 15) - 7;
-      return gx * gx + gy * gy < 9;
+      const per = Math.max(10, bw * 0.13);
+      const gx = (rx % per) - per / 2;
+      const gy = (ry % per) - per / 2;
+      const r = per * 0.22;
+      return gx * gx + gy * gy < r * r;
     }
     case "patched":
-      return x > bw * 0.52;
+      return rx > bw * 0.5;
     default:
       return false;
   }
 }
 
 const cache = new Map<string, string>();
-const PROC_MAX = 440; // cap processing resolution for speed
+const PROC_MAX = 720; // processing resolution — higher = smoother, less pixelated
 
-// Recolour Aina's white line-art:
-//  • keep the ink outline
-//  • fill the body solidly via a morphological close (dilate → flood → erode),
-//    which closes small gaps in loose sketches without eating thin limbs
+// Recolour Aina's white line-art, keeping her soft pencil lines:
+//  • fill the body via a morphological close (dilate → flood → erode) so loose
+//    sketches fill solidly without eating thin limbs
 //  • colour the eyes (small enclosed regions up in the head) with the eye colour
-//  • leave stray strokes like tail movement-lines as lines (not filled)
-//  • transparent background, cropped tight to the cat
+//  • composite Aina's ANTI-ALIASED lines on top (no hard/binarised edges)
+//  • NO colour outside the lines — the exterior stays transparent; only stray
+//    strokes like tail movement-lines remain, drawn as lines
 function recolor(img: HTMLImageElement, furHex: string, eyeHex: string, pattern: string): string {
   const scale = Math.min(1, PROC_MAX / Math.max(img.naturalWidth, img.naturalHeight));
   const w = Math.max(1, Math.round(img.naturalWidth * scale));
@@ -61,19 +73,22 @@ function recolor(img: HTMLImageElement, furHex: string, eyeHex: string, pattern:
   cv.width = w;
   cv.height = h;
   const ctx = cv.getContext("2d", { willReadFrequently: true })!;
+  ctx.imageSmoothingEnabled = true;
   ctx.drawImage(img, 0, 0, w, h);
   const im = ctx.getImageData(0, 0, w, h);
   const px = im.data;
-  const lum = (i: number) => {
+  const lumAt = (i: number) => {
     const p = i * 4;
     return px[p] * 0.299 + px[p + 1] * 0.587 + px[p + 2] * 0.114;
   };
-  const LINE = 125;
+  const lumArr = new Float32Array(N);
+  for (let i = 0; i < N; i++) lumArr[i] = lumAt(i);
 
+  const LINE = 130; // topology threshold
   const wall = new Uint8Array(N);
-  for (let i = 0; i < N; i++) wall[i] = lum(i) <= LINE ? 1 : 0;
+  for (let i = 0; i < N; i++) wall[i] = lumArr[i] <= LINE ? 1 : 0;
 
-  // ink bounding box → closing radius
+  // ink bbox → closing radius
   let mnx = w, mny = h, mxx = 0, mxy = 0;
   for (let i = 0; i < N; i++) {
     if (wall[i]) {
@@ -86,7 +101,7 @@ function recolor(img: HTMLImageElement, furHex: string, eyeHex: string, pattern:
   }
   const bw = Math.max(1, mxx - mnx + 1);
   const bh = Math.max(1, mxy - mny + 1);
-  const K = Math.max(5, Math.min(10, Math.round(Math.max(bw, bh) * 0.035)));
+  const K = Math.max(6, Math.min(14, Math.round(Math.max(bw, bh) * 0.03)));
 
   const dilate = (m: Uint8Array, R: number) => {
     const o = new Uint8Array(N);
@@ -136,7 +151,7 @@ function recolor(img: HTMLImageElement, furHex: string, eyeHex: string, pattern:
     return o;
   };
 
-  // Body: close the outline (dilate K → flood exterior → invert → erode K back).
+  // Body: close the outline then erode back (fills gaps, keeps thin limbs).
   const closed = dilate(wall, K);
   const outC = floodOutside(closed);
   const insideC = new Uint8Array(N);
@@ -156,7 +171,7 @@ function recolor(img: HTMLImageElement, furHex: string, eyeHex: string, pattern:
   const sil = new Uint8Array(N);
   for (let i = 0; i < N; i++) sil[i] = insideC[i] && dist[i] === -1 ? 1 : 0;
 
-  // Eyes: cleanly enclosed small regions in the upper head (from the thin-line flood).
+  // Eyes: cleanly enclosed small regions up in the head (thin-line flood).
   const out0 = floodOutside(wall);
   const inside0 = new Uint8Array(N);
   for (let i = 0; i < N; i++) inside0[i] = out0[i] || wall[i] ? 0 : 1;
@@ -190,29 +205,42 @@ function recolor(img: HTMLImageElement, furHex: string, eyeHex: string, pattern:
   const eyeLab = new Set<number>(cand.slice(0, 3).map(([, k]) => k));
 
   const fur = hex2rgb(furHex);
-  const dk = darken(fur, 0.22);
+  const dk = darken(fur, 0.24);
   const eye = hex2rgb(eyeHex);
+
   for (let i = 0; i < N; i++) {
     const p = i * 4;
-    if (wall[i]) {
-      px[p] = 34; px[p + 1] = 28; px[p + 2] = 22; px[p + 3] = 255;
-    } else if (inside0[i] && eyeLab.has(lab[i])) {
-      px[p] = eye.r; px[p + 1] = eye.g; px[p + 2] = eye.b; px[p + 3] = 255;
-    } else if (sil[i]) {
-      const x = (i % w) - mnx;
-      const y = ((i / w) | 0) - mny;
-      const c = patternDark(pattern, x, y, bw) ? dk : fur;
-      px[p] = c.r; px[p + 1] = c.g; px[p + 2] = c.b; px[p + 3] = 255;
+    const L = lumArr[i];
+    // soft ink coverage → anti-aliased lines
+    let a = (165 - L) / 90;
+    a = a < 0 ? 0 : a > 1 ? 1 : a;
+    const isEye = inside0[i] && eyeLab.has(lab[i]);
+    if (isEye || sil[i]) {
+      let base: RGB;
+      if (isEye) base = eye;
+      else {
+        const rx = (i % w) - mnx;
+        const ry = ((i / w) | 0) - mny;
+        base = patternDark(pattern, rx, ry, bw) ? dk : fur;
+      }
+      px[p] = Math.round(base.r * (1 - a) + INK.r * a);
+      px[p + 1] = Math.round(base.g * (1 - a) + INK.g * a);
+      px[p + 2] = Math.round(base.b * (1 - a) + INK.b * a);
+      px[p + 3] = 255;
+    } else if (a > 0.1) {
+      // stray / boundary lines (e.g. movement lines): keep as ink, no colour
+      px[p] = INK.r; px[p + 1] = INK.g; px[p + 2] = INK.b;
+      px[p + 3] = Math.round(a * 255);
     } else {
-      px[p + 3] = 0;
+      px[p + 3] = 0; // background — nothing outside the lines
     }
   }
   ctx.putImageData(im, 0, 0);
 
-  // crop tight to visible pixels
+  // crop to visible pixels
   let ax = w, ay = h, bx = 0, by = 0;
   for (let i = 0; i < N; i++) {
-    if (px[i * 4 + 3] > 0) {
+    if (px[i * 4 + 3] > 8) {
       const x = i % w, y = (i / w) | 0;
       if (x < ax) ax = x;
       if (x > bx) bx = x;
