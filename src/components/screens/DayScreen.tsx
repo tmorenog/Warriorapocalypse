@@ -18,6 +18,14 @@ import { Button, Panel, Badge, Modal } from "@/components/ui/primitives";
 
 type Tab = "cats" | "missions" | "shelter" | "inventory" | "log";
 
+const TABS: { id: Tab; label: string; icon: string }[] = [
+  { id: "cats", label: "Cats", icon: "🐱" },
+  { id: "missions", label: "Missions", icon: "🐾" },
+  { id: "shelter", label: "Shelter", icon: "🏕" },
+  { id: "inventory", label: "Stores", icon: "🎒" },
+  { id: "log", label: "Log", icon: "📜" },
+];
+
 export function DayScreen({ ctx }: { ctx: GameController }) {
   const run = ctx.run!;
   const [tab, setTab] = useState<Tab>("cats");
@@ -93,17 +101,34 @@ export function DayScreen({ ctx }: { ctx: GameController }) {
         <div className="hidden sm:block"><EventLogPanel ctx={ctx} /></div>
       </div>
 
-      {/* Mobile bottom nav */}
-      <nav className="fixed bottom-0 left-0 right-0 z-30 flex border-t border-fern/25 bg-night/95 sm:hidden">
-        {(["cats", "missions", "shelter", "inventory", "log"] as Tab[]).map((t) => (
-          <button
-            key={t}
-            onClick={() => setTab(t)}
-            className={`flex-1 py-2 text-[11px] capitalize ${tab === t ? "text-ember" : "text-parchment/60"}`}
-          >
-            {t}
-          </button>
-        ))}
+      {/* Mobile bottom nav — icon + label tabs with live badges */}
+      <nav className="fixed bottom-0 left-0 right-0 z-30 flex border-t border-fern/30 bg-night/95 pb-[env(safe-area-inset-bottom)] shadow-[0_-4px_16px_rgba(0,0,0,0.45)] sm:hidden">
+        {TABS.map((t) => {
+          const active = tab === t.id;
+          const badge = t.id === "missions" ? run.activeMissions.length : 0;
+          return (
+            <button
+              key={t.id}
+              onClick={() => setTab(t.id)}
+              aria-label={t.label}
+              aria-current={active ? "page" : undefined}
+              className={`relative flex flex-1 flex-col items-center gap-0.5 py-2 transition-colors ${
+                active ? "text-ember" : "text-parchment/60"
+              }`}
+            >
+              {active && <span className="absolute inset-x-3 top-0 h-0.5 rounded-full bg-ember" />}
+              <span className="relative text-lg leading-none">
+                {t.icon}
+                {badge > 0 && (
+                  <span className="absolute -right-2.5 -top-1.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-ember px-1 text-[9px] font-bold text-night">
+                    {badge}
+                  </span>
+                )}
+              </span>
+              <span className="text-[10px] font-semibold">{t.label}</span>
+            </button>
+          );
+        })}
       </nav>
 
       {/* Management modals (pause the game) */}
@@ -265,12 +290,35 @@ function SelectedCatPanel({ ctx, cat }: { ctx: GameController; cat: Cat }) {
 }
 
 function ActionsPanel({ ctx, openModal }: { ctx: GameController; openModal: (m: "missions" | "shelter" | "inventory") => void }) {
+  const run = ctx.run!;
+  const activeMissions = run.activeMissions.length;
   return (
     <Panel title="Actions">
-      <div className="grid grid-cols-2 gap-2">
-        <Button onClick={() => openModal("missions")}>🐾 Missions</Button>
-        <Button onClick={() => openModal("shelter")}>🏕 Shelter</Button>
-        <Button onClick={() => openModal("inventory")}>🎒 Inventory</Button>
+      {/* Management actions stand out from routine care */}
+      <div className="grid grid-cols-3 gap-2">
+        <Button
+          variant="primary"
+          className="relative flex-col items-center gap-0.5 py-3"
+          onClick={() => openModal("missions")}
+        >
+          <span className="text-lg leading-none">🐾</span>
+          <span className="text-xs font-semibold">Missions</span>
+          {activeMissions > 0 && (
+            <span className="absolute right-1.5 top-1.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-night px-1 text-[9px] font-bold text-ember">
+              {activeMissions}
+            </span>
+          )}
+        </Button>
+        <Button className="flex-col items-center gap-0.5 py-3" onClick={() => openModal("shelter")}>
+          <span className="text-lg leading-none">🏕</span>
+          <span className="text-xs font-semibold">Shelter</span>
+        </Button>
+        <Button className="flex-col items-center gap-0.5 py-3" onClick={() => openModal("inventory")}>
+          <span className="text-lg leading-none">🎒</span>
+          <span className="text-xs font-semibold">Stores</span>
+        </Button>
+      </div>
+      <div className="mt-2 grid grid-cols-3 gap-2">
         <Button onClick={ctx.feedGroup}>🍖 Feed</Button>
         <Button onClick={ctx.giveWater}>💧 Water</Button>
         <Button onClick={ctx.doAdvanceDay}>⏭ Next Day</Button>
