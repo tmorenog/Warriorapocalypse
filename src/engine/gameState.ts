@@ -386,7 +386,10 @@ export function advanceDay(run: RunState, meta: MetaProfile | null): DayAdvanceR
   // Random event (as a pending decision) if not ended and no battle triggered.
   if (!next.ended && !battleEnemy && !next.pendingDecision && !next.pendingCutscene) {
     if (rng.chance(0.7)) {
-      const eventId = pickRandomEvent(rng, next.day);
+      // Only surface role-flavored events for roles still alive in the group,
+      // so a dead deputy/Elder/kit never speaks up.
+      const livingRoles = new Set(next.cats.filter((c) => c.alive).map((c) => c.role));
+      const eventId = pickRandomEvent(rng, next.day, livingRoles);
       next = { ...next, pendingDecision: eventToPendingDecision(eventId), paused: true };
     }
   }

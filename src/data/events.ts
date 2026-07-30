@@ -34,6 +34,10 @@ export interface RandomEventDef {
   text: string;
   weight: number;
   minDay?: number;
+  // If set, this event only fires while a living cat of that role is in the
+  // group — so a dead deputy never "tells you something," a lost Elder never
+  // warns you, and a fallen kit never pipes up.
+  requiresRole?: "Leader" | "Deputy" | "Warrior" | "Elder" | "Kit";
   options: EventOption[];
 }
 
@@ -62,6 +66,7 @@ export const RANDOM_EVENTS: RandomEventDef[] = [
     title: "The Water Smells Wrong",
     text: "Your Elder believes the water source may be contaminated.",
     weight: 3,
+    requiresRole: "Elder",
     options: [
       { id: "avoid", label: "Ask the Elder to find another source", outcomes: [
         ok("A clean trickle is found nearby.", [{ kind: "addItem", itemId: "fresh_water", quantity: 1 }], 3),
@@ -78,6 +83,7 @@ export const RANDOM_EVENTS: RandomEventDef[] = [
     title: "Scratching Beneath the Shelter",
     text: "The kit swears something is scratching under the den floor.",
     weight: 2,
+    requiresRole: "Kit",
     options: [
       { id: "investigate", label: "Investigate", outcomes: [
         ok("Rats! They boil up from below.", [{ kind: "battle", enemyId: "rat" }], 3),
@@ -109,6 +115,7 @@ export const RANDOM_EVENTS: RandomEventDef[] = [
     title: "The Deputy Is Uneasy",
     text: "The deputy thinks the group should leave the area before nightfall.",
     weight: 2,
+    requiresRole: "Deputy",
     options: [
       { id: "prepare", label: "Prepare defenses instead", outcomes: [
         ok("The night passes without incident.", [{ kind: "shelterIntegrity", delta: 6 }], 3),
@@ -125,6 +132,7 @@ export const RANDOM_EVENTS: RandomEventDef[] = [
     title: "Tainted Prey",
     text: "One of the prey animals smells wrong to the Elder.",
     weight: 3,
+    requiresRole: "Elder",
     options: [
       { id: "discard", label: "Discard it to be safe", outcomes: [
         ok("Better hungry than sick.", [{ kind: "meterGroup", meter: "hunger", delta: -4 }], 3),
@@ -156,7 +164,7 @@ export const RANDOM_EVENTS: RandomEventDef[] = [
     text: "A clanmate is hiding a wound, afraid of being seen as weak.",
     weight: 3,
     options: [
-      { id: "treat", label: "Have the Elder treat it", outcomes: [
+      { id: "treat", label: "Clean and bind the wound", outcomes: [
         ok("The wound is cleaned before it can fester.", [{ kind: "meterMain", meter: "health", delta: 8 }], 3),
       ] },
       { id: "leave", label: "Respect their pride and leave it", outcomes: [
@@ -201,6 +209,7 @@ export const RANDOM_EVENTS: RandomEventDef[] = [
     title: "A Hidden Cache",
     text: "The kit's sharp nose finds a small hidden cache of supplies.",
     weight: 2,
+    requiresRole: "Kit",
     options: [
       { id: "take", label: "Gather it up", outcomes: [
         ok("A tidy little haul.", [{ kind: "addItem", itemId: "mouse", quantity: 1 }, { kind: "addItem", itemId: "cobwebs", quantity: 1 }], 3),
@@ -213,6 +222,7 @@ export const RANDOM_EVENTS: RandomEventDef[] = [
     title: "Tiny Sounds",
     text: "The kit hears something the adults cannot — a faint mewing nearby.",
     weight: 2,
+    requiresRole: "Kit",
     options: [
       { id: "follow", label: "Follow the sound carefully", outcomes: [
         ok("You find a hidden survivor.", [{ kind: "rescueCat" }], 2),
@@ -243,6 +253,7 @@ export const RANDOM_EVENTS: RandomEventDef[] = [
     text: "The Elder warns that water is growing scarce.",
     weight: 2,
     minDay: 5,
+    requiresRole: "Elder",
     options: [
       { id: "ration", label: "Ration water carefully", outcomes: [
         ok("Careful rationing stretches supplies.", [{ kind: "log", text: "Water is rationed." }], 3),
@@ -273,9 +284,10 @@ export const RANDOM_EVENTS: RandomEventDef[] = [
     title: "Bright Berries",
     text: "The kit found bright red berries and wants to eat them.",
     weight: 2,
+    requiresRole: "Kit",
     options: [
-      { id: "stop", label: "Have the Elder check them", outcomes: [
-        ok("Deathberries! The Elder forbids them.", [{ kind: "discovery", id: "deathberries", text: "The group learns to avoid deathberries." }], 3),
+      { id: "stop", label: "Have someone check them first", outcomes: [
+        ok("Deathberries! The group forbids them.", [{ kind: "discovery", id: "deathberries", text: "The group learns to avoid deathberries." }], 3),
       ] },
       { id: "allow", label: "Let the kit eat", outcomes: [
         ok("The kit falls terribly ill.", [{ kind: "meterMain", meter: "health", delta: -18 }], 3),

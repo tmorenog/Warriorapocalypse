@@ -229,28 +229,39 @@ function CatChip({ cat, selected, onSelect }: { cat: Cat; selected: boolean; onS
   );
 }
 
-// The clan shown large in the scene. Tap a cat to view it fullscreen.
+// The clan shown large in the scene, standing along the den floor (no floating).
+// Tap a cat to view it fullscreen.
 function SceneCats({ cats, selectedCatId, onView }: { cats: Cat[]; selectedCatId: string; onView: (id: string) => void }) {
   const present = cats.filter((c) => c.alive && !c.onMission && !c.isEnemyTurned);
+  const n = present.length;
+  // Scale sprites down as the group grows so they share one row on the floor.
+  const size = n <= 3 ? 128 : n === 4 ? 112 : n === 5 ? 96 : 84;
   return (
-    <div className="flex flex-1 flex-wrap items-center justify-center gap-x-1 gap-y-0 overflow-hidden">
-      {present.map((c, i) => (
-        <button
-          key={c.id}
-          onClick={() => onView(c.id)}
-          aria-label={`View ${c.name}`}
-          className={`flex flex-col items-center rounded-lg p-0.5 transition ${c.id === selectedCatId ? "ring-2 ring-ember/70" : ""}`}
-        >
-          <CatSprite
-            appearance={c.appearance}
-            role={c.role}
-            cosmetics={c.cosmetics}
-            size={112}
-            facing={i % 2 ? "left" : "right"}
-          />
-          <span className="-mt-1 rounded bg-black/50 px-1.5 text-[10px] font-semibold text-parchment">{c.name}</span>
-        </button>
-      ))}
+    <div className="relative flex-1">
+      {present.map((c, i) => {
+        // Spread evenly across the width; every cat's feet rest on the floor line.
+        const left = ((i + 1) / (n + 1)) * 100;
+        return (
+          <button
+            key={c.id}
+            onClick={() => onView(c.id)}
+            aria-label={`View ${c.name}`}
+            style={{ left: `${left}%`, bottom: 0, zIndex: 10 + i }}
+            className={`absolute flex -translate-x-1/2 flex-col items-center rounded-lg p-0.5 transition ${
+              c.id === selectedCatId ? "ring-2 ring-ember/70" : ""
+            }`}
+          >
+            <CatSprite
+              appearance={c.appearance}
+              role={c.role}
+              cosmetics={c.cosmetics}
+              size={size}
+              facing={i % 2 ? "left" : "right"}
+            />
+            <span className="-mt-1 rounded bg-black/50 px-1.5 text-[10px] font-semibold text-parchment">{c.name}</span>
+          </button>
+        );
+      })}
     </div>
   );
 }

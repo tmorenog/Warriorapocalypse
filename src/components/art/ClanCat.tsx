@@ -363,6 +363,7 @@ export function ClanCat({ role, appearance, size = 88, dimmed, turned, facing = 
           width: "100%",
           height: "100%",
           objectFit: "contain",
+          objectPosition: "bottom",
           opacity: url ? (dimmed ? 0.4 : 1) : 0,
           transform: facing === "left" ? "scaleX(-1)" : undefined,
           filter: turned ? "grayscale(0.3)" : undefined,

@@ -4,8 +4,13 @@ import { RANDOM_EVENTS, RANDOM_EVENTS_BY_ID } from "@/data/events";
 import type { EventOption, EventOutcome } from "@/data/events";
 import type { PendingDecision } from "./types";
 
-export function pickRandomEvent(rng: Rng, day: number): string {
-  const eligible = RANDOM_EVENTS.filter((e) => (e.minDay ?? 0) <= day);
+export function pickRandomEvent(rng: Rng, day: number, livingRoles?: Set<string>): string {
+  const eligible = RANDOM_EVENTS.filter(
+    (e) =>
+      (e.minDay ?? 0) <= day &&
+      // A role-flavored event only fires while that role is alive to speak/act.
+      (!e.requiresRole || !livingRoles || livingRoles.has(e.requiresRole)),
+  );
   const chosen = weightedPick(
     rng,
     eligible.map((e) => ({ value: e, weight: e.weight })),
