@@ -19,6 +19,7 @@ import {
 } from "./screens/MetaScreens";
 import { MultiplayerScreen } from "./screens/MultiplayerScreen";
 import { DebugPanel } from "./screens/DebugPanel";
+import { Cutscene } from "./screens/Cutscene";
 
 export function GameShell() {
   const ctx = useGameController();
@@ -36,6 +37,7 @@ export function GameShell() {
   return (
     <main className="min-h-screen">
       {renderScreen()}
+      {ctx.run?.pendingCutscene && <Cutscene ctx={ctx} />}
       <ToastLayer ctx={ctx} />
       {isDev && <DebugPanel ctx={ctx} />}
     </main>

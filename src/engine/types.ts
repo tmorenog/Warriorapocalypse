@@ -193,6 +193,7 @@ export interface RunState {
   discoveries: string[];
   startedAtDay: number;
   lastSavedAt: number | null;
+  pendingCutscene?: string | null; // id of a scripted cutscene to play
 }
 
 export type RunPhase =

@@ -257,6 +257,18 @@ const SEEDS: Seed[] = [
     description: "A dappled tortoiseshell-and-white she-cat with a hard amber stare and a heart scarred by old loss.",
     appearance: { furColor: "#9a5a2e", furPattern: "bicolor", eyeColor: "#c8901f", markingColor: "#eef0ee", bodyType: "medium" },
   },
+  {
+    id: "appledusk",
+    name: "Appledusk",
+    clan: "RiverClan",
+    role: "Deputy",
+    health: 100, hunger: 100, thirst: 100, infection: 0, energy: 95,
+    attack: 17, defense: 14, hunting: 16, medicine: 3, stealth: 12, speed: 15,
+    passive: ["river_charm", "River Charm", "A little better at calming frightened survivors."],
+    battle: ["current_dash", "Current Dash", "A quick strike that can lower the target's speed."],
+    description: "A handsome dark brown tabby tom of RiverClan — charming, and quick to move on.",
+    appearance: { furColor: "#6b4b2c", furPattern: "tabby", eyeColor: "#4d7fb0" },
+  },
   // ---- Kits (original young cats) ----
   {
     id: "dewkit",

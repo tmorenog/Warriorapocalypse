@@ -326,7 +326,7 @@ export function useGameController() {
 
   const doAdvanceDay = useCallback(() => {
     setRun((r) => {
-      if (!r || r.ended || r.phase !== "day" || r.pendingDecision) return r;
+      if (!r || r.ended || r.phase !== "day" || r.pendingDecision || r.pendingCutscene) return r;
       const { run: next, coinsEarned, triggeredBattleEnemyId, droughtSurvived } = advanceDay(r, metaRef.current);
       if (coinsEarned > 0) awardCoins(coinsEarned, `day ${next.day}`);
       setTimeout(() => checkAchievements(next, { survivedDrought: droughtSurvived }), 0);
@@ -342,7 +342,7 @@ export function useGameController() {
 
   // Day countdown timer.
   useEffect(() => {
-    if (!run || run.phase !== "day" || run.paused || run.pendingDecision || run.ended || battle) return;
+    if (!run || run.phase !== "day" || run.paused || run.pendingDecision || run.ended || battle || run.pendingCutscene) return;
     const interval = setInterval(() => {
       setRun((r) => {
         if (!r || r.phase !== "day" || r.paused || r.pendingDecision || r.ended) return r;
@@ -375,6 +375,10 @@ export function useGameController() {
   // ---- player actions ----
   const setPaused = useCallback((paused: boolean) => {
     setRun((r) => (r ? { ...r, paused } : r));
+  }, []);
+
+  const clearCutscene = useCallback(() => {
+    setRun((r) => (r ? { ...r, pendingCutscene: null } : r));
   }, []);
 
   const selectCat = useCallback((catId: string) => {
@@ -584,7 +588,7 @@ export function useGameController() {
     // run lifecycle
     startNewRun, continueRun, saveNow, deleteSave, importSave, resetAllData,
     // gameplay
-    setPaused, selectCat, digShelter, finishScavenge, startMission,
+    setPaused, selectCat, digShelter, finishScavenge, startMission, clearCutscene,
     buildShelterUpgrade, abandonShelter, treatCat, feedGroup, giveWater,
     resolveDecision, doAdvanceDay,
     // battle
