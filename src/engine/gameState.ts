@@ -349,11 +349,13 @@ export function advanceDay(run: RunState, meta: MetaProfile | null): DayAdvanceR
   }
 
   // Mapleshade's grudge: if Appledusk shelters in the same den as Mapleshade,
-  // there is a chance she settles an old score in the dark of the bunker.
-  if (!next.pendingCutscene && next.shelter.built) {
+  // there is a chance she settles an old score in the dark of the bunker. It's a
+  // slow-burn: the resentment festers for a while before it boils over, so it
+  // never fires in the first few days and stays rare after that.
+  if (!next.pendingCutscene && next.shelter.built && next.day >= 6) {
     const maple = next.cats.find((c) => c.defId === "mapleshade" && c.alive && !c.onMission);
     const apple = next.cats.find((c) => c.defId === "appledusk" && c.alive && !c.onMission);
-    if (maple && apple && rng.chance(0.2)) {
+    if (maple && apple && rng.chance(0.12)) {
       next = updateCat(next, apple.id, (c) => killCat(c, "Killed by Mapleshade"));
       next = log(next, "death", "A warrior has been found dead. Appledusk lies still in the den — Mapleshade watches from the shadows.");
       next = { ...next, pendingCutscene: "mapleshade_appledusk" };
