@@ -245,6 +245,18 @@ const SEEDS: Seed[] = [
     description: "A magnificent golden tabby tom with a thick mane-like ruff and a warm heart.",
     appearance: { furColor: "#c79a4a", furPattern: "tabby", eyeColor: "#c8901f", bodyType: "large", tailStyle: "fluffy" },
   },
+  {
+    id: "mapleshade",
+    name: "Mapleshade",
+    clan: "ThunderClan",
+    role: "Warrior",
+    health: 102, hunger: 100, thirst: 100, infection: 0, energy: 96,
+    attack: 20, defense: 14, hunting: 15, medicine: 3, stealth: 14, speed: 15,
+    passive: ["scarred_resolve", "Scarred Resolve", "Fights harder after a clanmate is wounded."],
+    battle: ["spiteful_strike", "Spiteful Strike", "A savage strike that hits harder against wounded foes."],
+    description: "A dappled tortoiseshell-and-white she-cat with a hard amber stare and a heart scarred by old loss.",
+    appearance: { furColor: "#9a5a2e", furPattern: "bicolor", eyeColor: "#c8901f", markingColor: "#eef0ee", bodyType: "medium" },
+  },
   // ---- Kits (original young cats) ----
   {
     id: "dewkit",
