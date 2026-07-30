@@ -292,6 +292,21 @@ export function advanceDay(run: RunState, meta: MetaProfile | null): DayAdvanceR
 
   // Infection growth + turning.
   next = { ...next, cats: next.cats.map((c) => growInfection(c, next.difficulty)) };
+  // Without a living Elder there is no skilled healer, so wounds fester and the
+  // sickness spreads faster — you can survive, but not for as long.
+  const hasElder = next.cats.some((c) => c.alive && c.role === "Elder");
+  if (!hasElder) {
+    next = {
+      ...next,
+      cats: next.cats.map((c) => {
+        if (!c.alive) return c;
+        let { health, infection } = c.meters;
+        if (infection > 0) infection = Math.min(100, infection + 5);
+        if (health > 0 && health < 55) health = Math.max(1, health - 3); // wounds fester
+        return recomputeStage({ ...c, meters: { ...c.meters, health, infection } });
+      }),
+    };
+  }
   for (const cat of next.cats) {
     if (cat.alive && cat.meters.infection >= 100) {
       next = updateCat(next, cat.id, (c) => turnCat(c));

@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import type { GameController } from "@/game/useGameController";
-import type { CharacterDef, Difficulty, RoleId } from "@/engine/types";
+import type { CharacterDef, Difficulty } from "@/engine/types";
 import { BOOK_CHARACTERS } from "@/data/characters";
 import { CLANS } from "@/data/clans";
 import { DIFFICULTY_PRESETS } from "@/config/balance";
@@ -9,8 +9,6 @@ import { CatSprite } from "@/components/art/CatSprite";
 import { Button, Panel, Badge, Modal } from "@/components/ui/primitives";
 import { CustomCatCreator } from "./CustomCatCreator";
 
-const REQUIRED_5: RoleId[] = ["Leader", "Deputy", "Warrior", "Elder", "Kit"];
-
 // Every cat keeps its OWN canonical role — no reassignment. (So a warrior like
 // Ravenpaw is never turned into a Leader.) The player builds a proper clan with
 // one cat of each role.
@@ -18,19 +16,24 @@ function assignRoles(defs: CharacterDef[]): CharacterDef[] {
   return defs.map((d) => ({ ...d }));
 }
 
-// A valid clan has exactly one cat of each of the five roles.
-function groupValidity(main: CharacterDef | null, mates: CharacterDef[]): { ok: boolean; reason: string } {
+// A valid clan needs a Leader, Deputy, Kit, and at least one Warrior. An Elder
+// (the healer) is OPTIONAL — you can go without one, but survival is harder, so
+// the fifth cat is either an Elder or a second Warrior.
+function groupValidity(
+  main: CharacterDef | null,
+  mates: CharacterDef[],
+): { ok: boolean; reason: string; noElder?: boolean } {
   if (!main || mates.length !== 4) return { ok: false, reason: "Pick your cat and 4 clanmates." };
   const counts: Record<string, number> = {};
   for (const c of [main, ...mates]) counts[c.role] = (counts[c.role] ?? 0) + 1;
-  const missing = REQUIRED_5.filter((r) => !counts[r]);
-  if (missing.length) {
-    const label = missing.map((r) => (r === "Elder" ? "Elder" : r)).join(", ");
-    return { ok: false, reason: `Your clan still needs a ${label}.` };
-  }
-  const dup = REQUIRED_5.find((r) => counts[r] > 1);
-  if (dup) return { ok: false, reason: `Only one ${dup} in a clan — swap one out.` };
-  return { ok: true, reason: "" };
+  const need: string[] = [];
+  if ((counts.Leader ?? 0) !== 1) need.push("one Leader");
+  if ((counts.Deputy ?? 0) !== 1) need.push("one Deputy");
+  if ((counts.Kit ?? 0) !== 1) need.push("one Kit");
+  if ((counts.Warrior ?? 0) < 1) need.push("a Warrior");
+  if ((counts.Elder ?? 0) > 1) return { ok: false, reason: "Only one Elder in a clan." };
+  if (need.length) return { ok: false, reason: `Your clan needs ${need.join(", ")}.` };
+  return { ok: true, reason: "", noElder: !counts.Elder };
 }
 
 export function NewGameScreen({ ctx }: { ctx: GameController }) {
@@ -97,8 +100,9 @@ export function NewGameScreen({ ctx }: { ctx: GameController }) {
 
       <Panel title={`Choose 4 Clanmates (${clanmates.length}/4)`} className="mb-4">
         <p className="mb-2 text-xs text-parchment/60">
-          Build a proper clan: exactly one <strong className="text-fern">Leader, Deputy, Warrior, Elder, and Kit</strong>.
-          Every cat keeps its own role — each card shows it below the name.
+          A clan needs a <strong className="text-fern">Leader, Deputy, Warrior, and Kit</strong>. An
+          <strong className="text-fern"> Elder</strong> (your healer) is optional — bring one, or take a
+          second Warrior instead and survive on grit. Every cat keeps its own role.
         </p>
         <CharacterGrid
           characters={BOOK_CHARACTERS.filter((c) => c.id !== mainCat?.id)}
@@ -121,6 +125,11 @@ export function NewGameScreen({ ctx }: { ctx: GameController }) {
             ))}
           </div>
           {!validity.ok && <p className="mt-2 text-xs text-ember">{validity.reason}</p>}
+          {validity.ok && validity.noElder && (
+            <p className="mt-2 text-xs text-yellow-300">
+              No Elder — with no skilled healer, wounds fester and the sickness spreads faster. You&rsquo;ll survive, but not as long.
+            </p>
+          )}
         </Panel>
       )}
 
