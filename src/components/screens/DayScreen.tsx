@@ -22,6 +22,7 @@ export function DayScreen({ ctx }: { ctx: GameController }) {
   const run = ctx.run!;
   const [tab, setTab] = useState<Tab>("cats");
   const [modal, setModal] = useState<null | "missions" | "shelter" | "inventory">(null);
+  const [viewCatId, setViewCatId] = useState<string | null>(null);
 
   const selected = run.cats.find((c) => c.id === run.selectedCatId) ?? run.cats[0];
   const timePct = (run.dayTimeRemainingMs / 60000) * 100;
@@ -42,18 +43,18 @@ export function DayScreen({ ctx }: { ctx: GameController }) {
       <div className="mt-3 grid grid-cols-1 gap-3 lg:grid-cols-[1fr_320px]">
         {/* Left: scene + roster + selected */}
         <div className="space-y-3">
-          <Scene weather={run.weather} variant={run.shelter.built ? "den" : "forest"} height={200}>
-            <div className="flex h-full flex-col justify-between p-3">
+          <Scene weather={run.weather} variant={run.shelter.built ? "den" : "forest"} height="clamp(260px, 48vh, 460px)">
+            <div className="flex h-full flex-col justify-between p-2">
               <div className="flex flex-wrap gap-1">
                 <Badge color={CLANS[selected.clan].color}>{WEATHER_EFFECTS[run.weather].label}</Badge>
                 <Badge>{run.shelter.built ? "Sheltered" : "Exposed"}</Badge>
               </div>
-              <p className="max-w-md rounded bg-black/45 px-2 py-1 text-xs text-parchment/90">
+              {/* The clan, shown large — tap a cat to view it fullscreen */}
+              <SceneCats cats={run.cats} selectedCatId={run.selectedCatId} onView={(id) => { ctx.selectCat(id); setViewCatId(id); }} />
+              <p className="rounded bg-black/45 px-2 py-1 text-[11px] text-parchment/90">
                 {WEATHER_EFFECTS[run.weather].description} {run.log[0]?.text}
               </p>
             </div>
-            {/* Living cats wandering the camp */}
-            <SceneCats cats={run.cats} />
           </Scene>
 
           {/* Cat roster (scrollable) */}
@@ -129,6 +130,39 @@ export function DayScreen({ ctx }: { ctx: GameController }) {
           </div>
         </Modal>
       )}
+
+      {/* Fullscreen cat viewer */}
+      {viewCatId && <FullscreenCat ctx={ctx} catId={viewCatId} onClose={() => setViewCatId(null)} />}
+    </div>
+  );
+}
+
+function FullscreenCat({ ctx, catId, onClose }: { ctx: GameController; catId: string; onClose: () => void }) {
+  const cat = ctx.run!.cats.find((c) => c.id === catId);
+  if (!cat) return null;
+  return (
+    <div className="fixed inset-0 z-[70] flex items-center justify-center overflow-y-auto bg-night/95 p-4 animate-fade-in" onClick={onClose}>
+      <div className="w-full max-w-sm" onClick={(e) => e.stopPropagation()}>
+        <div className="flex justify-center">
+          <CatPortrait appearance={cat.appearance} role={cat.role} cosmetics={cat.cosmetics} size={300} dimmed={!cat.alive} turned={cat.isEnemyTurned} />
+        </div>
+        <div className="mt-1 text-center">
+          <div className="font-display text-2xl text-parchment">{cat.name}</div>
+          <div className="mt-1 flex justify-center gap-1">
+            <Badge color={CLANS[cat.clan].color}>{cat.role}</Badge>
+            <Badge>{cat.clan}</Badge>
+            {cat.infectionStage !== "None" && <Badge color="#8a5cc4">{cat.infectionStage}</Badge>}
+          </div>
+        </div>
+        <div className="mx-auto mt-3 max-w-xs space-y-1">
+          <MeterBar kind="health" value={cat.meters.health} />
+          <MeterBar kind="hunger" value={cat.meters.hunger} />
+          <MeterBar kind="thirst" value={cat.meters.thirst} />
+          <MeterBar kind="energy" value={cat.meters.energy} />
+          {cat.meters.infection > 0 && <MeterBar kind="infection" value={cat.meters.infection} />}
+        </div>
+        <Button className="mt-4 w-full" onClick={onClose}>Close</Button>
+      </div>
     </div>
   );
 }
@@ -170,31 +204,28 @@ function CatChip({ cat, selected, onSelect }: { cat: Cat; selected: boolean; onS
   );
 }
 
-// Living cats wandering at the bottom of the main scene — some pace, some rest.
-function SceneCats({ cats }: { cats: Cat[] }) {
-  const present = cats.filter((c) => c.alive && !c.onMission && !c.isEnemyTurned).slice(0, 4);
-  const spots = ["6%", "30%", "56%", "78%"];
+// The clan shown large in the scene. Tap a cat to view it fullscreen.
+function SceneCats({ cats, selectedCatId, onView }: { cats: Cat[]; selectedCatId: string; onView: (id: string) => void }) {
+  const present = cats.filter((c) => c.alive && !c.onMission && !c.isEnemyTurned);
   return (
-    <div className="pointer-events-none absolute inset-x-0 bottom-1 h-16">
-      {present.map((c, i) => {
-        const pacing = i === 0;
-        return (
-          <div
-            key={c.id}
-            className={`absolute bottom-0 ${pacing ? "a-pace spr" : ""}`}
-            style={{ left: spots[i], animationDelay: `${i * 0.6}s`, transformOrigin: "center" }}
-          >
-            <CatSprite
-              appearance={c.appearance}
-              role={c.role}
-              cosmetics={c.cosmetics}
-              size={58}
-              facing={i % 2 ? "left" : "right"}
-              action={pacing ? "walk" : "idle"}
-            />
-          </div>
-        );
-      })}
+    <div className="flex flex-1 flex-wrap items-center justify-center gap-x-1 gap-y-0 overflow-hidden">
+      {present.map((c, i) => (
+        <button
+          key={c.id}
+          onClick={() => onView(c.id)}
+          aria-label={`View ${c.name}`}
+          className={`flex flex-col items-center rounded-lg p-0.5 transition ${c.id === selectedCatId ? "ring-2 ring-ember/70" : ""}`}
+        >
+          <CatSprite
+            appearance={c.appearance}
+            role={c.role}
+            cosmetics={c.cosmetics}
+            size={112}
+            facing={i % 2 ? "left" : "right"}
+          />
+          <span className="-mt-1 rounded bg-black/50 px-1.5 text-[10px] font-semibold text-parchment">{c.name}</span>
+        </button>
+      ))}
     </div>
   );
 }
