@@ -183,7 +183,7 @@ const SEEDS: Seed[] = [
     passive: ["long_stride", "Long Stride", "Missions in open terrain finish faster for the group."],
     battle: ["moor_rally", "Moor Rally", "Boosts the whole group's speed and next escape attempt."],
     description: "A lean black-and-white tom with an unusually long tail, swift across the open moor.",
-    appearance: { furColor: "#2f3036", furPattern: "patched", eyeColor: "#c8a13a", bodyType: "lean", tailStyle: "long" },
+    appearance: { furColor: "#2f3036", furPattern: "bicolor", eyeColor: "#c8a13a", bodyType: "lean", tailStyle: "long", markingColor: "#eef0ee" },
   },
   {
     id: "crookedstar",

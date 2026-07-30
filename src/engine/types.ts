@@ -61,6 +61,7 @@ export interface Appearance {
   bodyType: string;
   earShape: string;
   tailStyle: string;
+  markingColor?: string; // secondary colour for bicolor/marked patterns (e.g. white)
 }
 
 export interface AbilityDef {

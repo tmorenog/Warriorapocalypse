@@ -54,6 +54,25 @@ function patternDark(pattern: string, rx: number, ry: number, bw: number): boole
   }
 }
 
+// Returns which colour a body pixel takes: base fur, a darker shade, or the
+// light marking colour (for bicolor cats — white belly/chest and a face blaze).
+function patternZone(
+  pattern: string,
+  rx: number,
+  ry: number,
+  bw: number,
+  bh: number,
+  eyeCx: number,
+  eyeTop: number,
+): "base" | "dark" | "light" {
+  if (pattern === "bicolor") {
+    if (ry > bh * 0.58) return "light"; // white underside / chest / legs
+    if (Math.abs(rx - eyeCx) < bw * 0.05 && ry > eyeTop - bh * 0.03 && ry < eyeTop + bh * 0.3) return "light"; // face blaze
+    return "base";
+  }
+  return patternDark(pattern, rx, ry, bw) ? "dark" : "base";
+}
+
 const cache = new Map<string, string>();
 const PROC_MAX = 720; // processing resolution — higher = smoother, less pixelated
 
@@ -64,7 +83,7 @@ const PROC_MAX = 720; // processing resolution — higher = smoother, less pixel
 //  • composite Aina's ANTI-ALIASED lines on top (no hard/binarised edges)
 //  • NO colour outside the lines — the exterior stays transparent; only stray
 //    strokes like tail movement-lines remain, drawn as lines
-function recolor(img: HTMLImageElement, furHex: string, eyeHex: string, pattern: string): string {
+function recolor(img: HTMLImageElement, furHex: string, eyeHex: string, pattern: string, markingHex: string): string {
   const scale = Math.min(1, PROC_MAX / Math.max(img.naturalWidth, img.naturalHeight));
   const w = Math.max(1, Math.round(img.naturalWidth * scale));
   const h = Math.max(1, Math.round(img.naturalHeight * scale));
@@ -171,8 +190,11 @@ function recolor(img: HTMLImageElement, furHex: string, eyeHex: string, pattern:
   const sil = new Uint8Array(N);
   for (let i = 0; i < N; i++) sil[i] = insideC[i] && dist[i] === -1 ? 1 : 0;
 
-  // Eyes: cleanly enclosed small regions up in the head (thin-line flood).
-  const out0 = floodOutside(wall);
+  // Eyes: cleanly enclosed small regions up in the head. Use a slightly dilated
+  // barrier so an eye whose outline has a tiny gap still reads as enclosed
+  // (otherwise only one eye would get coloured).
+  const eyeBarrier = dilate(wall, 2);
+  const out0 = floodOutside(eyeBarrier);
   const inside0 = new Uint8Array(N);
   for (let i = 0; i < N; i++) inside0[i] = out0[i] || wall[i] ? 0 : 1;
   const lab = new Int32Array(N);
@@ -204,9 +226,23 @@ function recolor(img: HTMLImageElement, furHex: string, eyeHex: string, pattern:
   cand.sort((a, b) => b[0] - a[0]);
   const eyeLab = new Set<number>(cand.slice(0, 3).map(([, k]) => k));
 
+  // Eye anchor (relative to bbox) — used to place a face blaze on bicolor cats.
+  let exSum = 0, eyN = 0, eyMinY = h;
+  for (let i = 0; i < N; i++) {
+    if (inside0[i] && eyeLab.has(lab[i])) {
+      exSum += i % w;
+      eyN++;
+      const y = (i / w) | 0;
+      if (y < eyMinY) eyMinY = y;
+    }
+  }
+  const eyeCx = eyN ? exSum / eyN - mnx : bw / 2;
+  const eyeTop = eyN ? eyMinY - mny : bh * 0.2;
+
   const fur = hex2rgb(furHex);
   const dk = darken(fur, 0.24);
   const eye = hex2rgb(eyeHex);
+  const marking = hex2rgb(markingHex);
 
   for (let i = 0; i < N; i++) {
     const p = i * 4;
@@ -221,7 +257,8 @@ function recolor(img: HTMLImageElement, furHex: string, eyeHex: string, pattern:
       else {
         const rx = (i % w) - mnx;
         const ry = ((i / w) | 0) - mny;
-        base = patternDark(pattern, rx, ry, bw) ? dk : fur;
+        const zone = patternZone(pattern, rx, ry, bw, bh, eyeCx, eyeTop);
+        base = zone === "light" ? marking : zone === "dark" ? dk : fur;
       }
       px[p] = Math.round(base.r * (1 - a) + INK.r * a);
       px[p + 1] = Math.round(base.g * (1 - a) + INK.g * a);
@@ -279,7 +316,8 @@ export function ClanCat({ role, appearance, size = 88, dimmed, turned, facing = 
   const color = turned ? "#b9b2c6" : appearance.furColor;
   const eyeColor = turned ? "#c94a4a" : appearance.eyeColor;
   const pattern = appearance.furPattern || "solid";
-  const key = `${src}|${color}|${eyeColor}|${pattern}`;
+  const marking = appearance.markingColor || "#eef0ee";
+  const key = `${src}|${color}|${eyeColor}|${pattern}|${marking}`;
   const [url, setUrl] = useState<string | null>(() => cache.get(key) ?? null);
 
   useEffect(() => {
@@ -292,7 +330,7 @@ export function ClanCat({ role, appearance, size = 88, dimmed, turned, facing = 
     img.onload = () => {
       if (cancelled) return;
       try {
-        const u = recolor(img, color, eyeColor, pattern);
+        const u = recolor(img, color, eyeColor, pattern, marking);
         cache.set(key, u);
         setUrl(u);
       } catch {
@@ -306,7 +344,7 @@ export function ClanCat({ role, appearance, size = 88, dimmed, turned, facing = 
     return () => {
       cancelled = true;
     };
-  }, [key, src, color, eyeColor, pattern]);
+  }, [key, src, color, eyeColor, pattern, marking]);
 
   return (
     <div className={className} style={{ width: size, height: size, display: "inline-block", lineHeight: 0 }}>
