@@ -18,7 +18,9 @@ function assignRoles(defs: CharacterDef[]): CharacterDef[] {
 
 // A valid clan needs a Leader, Deputy, Kit, and at least one Warrior. An Elder
 // (the healer) is OPTIONAL — you can go without one, but survival is harder, so
-// the fifth cat is either an Elder or a second Warrior.
+// the fifth cat is either an Elder or a second Warrior. The player's own cat
+// counts toward these roles too, so picking a Leader as your cat already fills
+// the Leader slot.
 function groupValidity(
   main: CharacterDef | null,
   mates: CharacterDef[],
@@ -26,14 +28,31 @@ function groupValidity(
   if (!main || mates.length !== 4) return { ok: false, reason: "Pick your cat and 4 clanmates." };
   const counts: Record<string, number> = {};
   for (const c of [main, ...mates]) counts[c.role] = (counts[c.role] ?? 0) + 1;
+  const L = counts.Leader ?? 0;
+  const D = counts.Deputy ?? 0;
+  const K = counts.Kit ?? 0;
+  const W = counts.Warrior ?? 0;
+  const E = counts.Elder ?? 0;
+
+  // Missing required roles come first — tell the player exactly what to add.
   const need: string[] = [];
-  if ((counts.Leader ?? 0) !== 1) need.push("one Leader");
-  if ((counts.Deputy ?? 0) !== 1) need.push("one Deputy");
-  if ((counts.Kit ?? 0) !== 1) need.push("one Kit");
-  if ((counts.Warrior ?? 0) < 1) need.push("a Warrior");
-  if ((counts.Elder ?? 0) > 1) return { ok: false, reason: "Only one Elder in a clan." };
-  if (need.length) return { ok: false, reason: `Your clan needs ${need.join(", ")}.` };
-  return { ok: true, reason: "", noElder: !counts.Elder };
+  if (L === 0) need.push("a Leader");
+  if (D === 0) need.push("a Deputy");
+  if (K === 0) need.push("a Kit");
+  if (W === 0) need.push("a Warrior");
+  if (need.length) return { ok: false, reason: `Your clan still needs ${need.join(", ")}.` };
+
+  // Then over-filled single-cat roles — say you have too many, not that you need one.
+  const tooMany: string[] = [];
+  if (L > 1) tooMany.push(`Leaders (${L})`);
+  if (D > 1) tooMany.push(`Deputies (${D})`);
+  if (K > 1) tooMany.push(`Kits (${K})`);
+  if (E > 1) tooMany.push(`Elders (${E})`);
+  if (tooMany.length) {
+    return { ok: false, reason: `A clan has just one of each — swap out the extra ${tooMany.join(", ")}.` };
+  }
+
+  return { ok: true, reason: "", noElder: !E };
 }
 
 export function NewGameScreen({ ctx }: { ctx: GameController }) {
@@ -102,8 +121,10 @@ export function NewGameScreen({ ctx }: { ctx: GameController }) {
         <p className="mb-2 text-xs text-parchment/60">
           A clan needs a <strong className="text-fern">Leader, Deputy, Warrior, and Kit</strong>. An
           <strong className="text-fern"> Elder</strong> (your healer) is optional — bring one, or take a
-          second Warrior instead and survive on grit. Every cat keeps its own role.
+          second Warrior instead and survive on grit. <strong className="text-parchment/80">Your own cat
+          counts too</strong> — if you picked a Leader, that slot is already filled.
         </p>
+        {mainCat && <RoleCoverage main={mainCat} mates={clanmates} />}
         <CharacterGrid
           characters={BOOK_CHARACTERS.filter((c) => c.id !== mainCat?.id)}
           selectedIds={clanmates.map((c) => c.id)}
@@ -150,6 +171,42 @@ export function NewGameScreen({ ctx }: { ctx: GameController }) {
           />
         </Modal>
       )}
+    </div>
+  );
+}
+
+// Live checklist of which clan roles are covered by the current picks (the
+// player's own cat included), so it's clear what's filled and what's still open.
+function RoleCoverage({ main, mates }: { main: CharacterDef; mates: CharacterDef[] }) {
+  const counts: Record<string, number> = {};
+  for (const c of [main, ...mates]) counts[c.role] = (counts[c.role] ?? 0) + 1;
+  const rows: { role: string; label: string; need: "one" | "some" | "opt" }[] = [
+    { role: "Leader", label: "Leader", need: "one" },
+    { role: "Deputy", label: "Deputy", need: "one" },
+    { role: "Warrior", label: "Warrior", need: "some" },
+    { role: "Kit", label: "Kit", need: "one" },
+    { role: "Elder", label: "Elder", need: "opt" },
+  ];
+  return (
+    <div className="mb-2 flex flex-wrap gap-1">
+      {rows.map((r) => {
+        const n = counts[r.role] ?? 0;
+        const over = (r.role === "Leader" || r.role === "Deputy" || r.role === "Kit" || r.role === "Elder") && n > 1;
+        const ok = r.need === "opt" ? !over : r.need === "some" ? n >= 1 && !over : n === 1;
+        const color = over ? "#c15a5a" : ok ? "#8bab6a" : "#c8a24a";
+        const mark = over ? "⚠" : ok ? "✓" : "○";
+        return (
+          <span
+            key={r.role}
+            className="inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[11px] font-semibold"
+            style={{ borderColor: color + "66", color, background: color + "1a" }}
+          >
+            {mark} {r.label}
+            {n > 1 ? ` ×${n}` : ""}
+            {r.need === "opt" && n === 0 ? " (optional)" : ""}
+          </span>
+        );
+      })}
     </div>
   );
 }
