@@ -10,7 +10,7 @@ import { WEATHER_EFFECTS } from "@/config/balance";
 import { estimateMission } from "@/engine/missions";
 import { kitMissionAllowed } from "@/engine/multiplayer";
 import { computeUpgradeEffects } from "@/engine/gameState";
-import { Scene, DEN_PERCHES, type DenPerch } from "@/components/art/Scene";
+import { Scene } from "@/components/art/Scene";
 import { CatPortrait } from "@/components/art/CatPortrait";
 import { CatSprite } from "@/components/art/CatSprite";
 import { MeterBar } from "@/components/ui/MeterBar";
@@ -51,28 +51,25 @@ export function DayScreen({ ctx }: { ctx: GameController }) {
       <div className="mt-3 grid grid-cols-1 gap-3 lg:grid-cols-[1fr_320px]">
         {/* Left: scene + roster + selected */}
         <div className="space-y-3">
-          <Scene weather={run.weather} variant={run.shelter.built ? "den" : "forest"} height="clamp(260px, 48vh, 460px)" day={run.day} coins={ctx.meta?.coins}>
-            <div className="flex h-full flex-col justify-between p-2">
-              {/* In the den the corners show hand-drawn coins/day, so skip the
-                  weather badges there to keep them clear. */}
-              {!run.shelter.built && (
+          <Scene weather={run.weather} variant={run.shelter.built ? "den" : "forest"} height="clamp(260px, 48vh, 460px)">
+            {/* Once sheltered, the den IS Aina's drawing — shown on its own. Before
+                shelter, the forest scene shows the clan standing with a caption. */}
+            {!run.shelter.built && (
+              <div className="flex h-full flex-col justify-between p-2">
                 <div className="flex flex-wrap gap-1">
                   <Badge color={CLANS[selected.clan].color}>{WEATHER_EFFECTS[run.weather].label}</Badge>
                   <Badge>Exposed</Badge>
                 </div>
-              )}
-              {/* The clan, shown large — tap a cat to view it fullscreen. In the
-                  den they sit on the stump / log / rock / barrel perches. */}
-              <SceneCats
-                cats={run.cats}
-                selectedCatId={run.selectedCatId}
-                perches={run.shelter.built ? DEN_PERCHES : undefined}
-                onView={(id) => { ctx.selectCat(id); setViewCatId(id); }}
-              />
-              <p className="mt-auto rounded bg-black/45 px-2 py-1 text-[11px] text-parchment/90">
-                {WEATHER_EFFECTS[run.weather].description} {run.log[0]?.text}
-              </p>
-            </div>
+                <SceneCats
+                  cats={run.cats}
+                  selectedCatId={run.selectedCatId}
+                  onView={(id) => { ctx.selectCat(id); setViewCatId(id); }}
+                />
+                <p className="mt-auto rounded bg-black/45 px-2 py-1 text-[11px] text-parchment/90">
+                  {WEATHER_EFFECTS[run.weather].description} {run.log[0]?.text}
+                </p>
+              </div>
+            )}
           </Scene>
 
           {/* Cat roster (scrollable) */}
@@ -239,53 +236,19 @@ function CatChip({ cat, selected, onSelect }: { cat: Cat; selected: boolean; onS
   );
 }
 
-// The clan shown large in the scene. In the den they sit on Aina's perches
-// (stump / log / rock / barrel); before shelter they stand along the floor.
-// Tap a cat to view it fullscreen.
+// The clan shown large in the forest scene (pre-shelter), standing along the
+// floor. Tap a cat to view it fullscreen.
 function SceneCats({
   cats,
   selectedCatId,
-  perches,
   onView,
 }: {
   cats: Cat[];
   selectedCatId: string;
-  perches?: DenPerch[];
   onView: (id: string) => void;
 }) {
   const present = cats.filter((c) => c.alive && !c.onMission && !c.isEnemyTurned);
   const n = present.length;
-
-  // Den: seat each cat on its perch (extra cats line up on the ground).
-  if (perches) {
-    return (
-      <div className="absolute inset-0">
-        {present.map((c, i) => {
-          const p =
-            perches[i] ??
-            ({ x: 12 + (i - perches.length) * 12, y: 94, size: 48, facing: i % 2 ? "left" : "right" } as DenPerch);
-          return (
-            <button
-              key={c.id}
-              onClick={() => onView(c.id)}
-              aria-label={`View ${c.name}`}
-              style={{ left: `${p.x}%`, top: `${p.y}%`, transform: "translate(-50%,-100%)", zIndex: 10 + Math.round(p.y) }}
-              className="absolute"
-            >
-              <div className={`relative rounded-lg p-0.5 ${c.id === selectedCatId ? "ring-2 ring-ember/70" : ""}`}>
-                <CatSprite appearance={c.appearance} role={c.role} cosmetics={c.cosmetics} size={p.size} facing={p.facing} />
-                <span className="pointer-events-none absolute left-1/2 top-full -translate-x-1/2 -translate-y-1 whitespace-nowrap rounded bg-black/55 px-1.5 text-[10px] font-semibold text-parchment">
-                  {c.name}
-                </span>
-              </div>
-            </button>
-          );
-        })}
-      </div>
-    );
-  }
-
-  // No shelter yet: stand along the floor, scaled to fit one row.
   const size = n <= 3 ? 128 : n === 4 ? 112 : n === 5 ? 96 : 84;
   return (
     <div className="relative flex-1">

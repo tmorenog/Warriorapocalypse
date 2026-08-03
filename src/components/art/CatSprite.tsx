@@ -7,7 +7,7 @@ export type SpriteAction = DoodleAction;
 
 // When a role is supplied, render Aina's hand-drawn art for that role, recoloured
 // by the player's chosen colour/pattern. Otherwise fall back to the generic cat.
-export function CatSprite({ role, ...props }: DoodleCatProps & { role?: RoleId }) {
+export function CatSprite({ role, fill, ...props }: DoodleCatProps & { role?: RoleId; fill?: boolean }) {
   if (role) {
     return (
       <ClanCat
@@ -15,6 +15,7 @@ export function CatSprite({ role, ...props }: DoodleCatProps & { role?: RoleId }
         appearance={props.appearance}
         cosmetics={props.cosmetics}
         size={props.size}
+        fill={fill}
         dimmed={props.dimmed}
         turned={props.turned}
         facing={props.facing}

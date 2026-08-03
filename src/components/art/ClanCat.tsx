@@ -312,13 +312,16 @@ interface Props {
   appearance: Appearance;
   cosmetics?: string[];
   size?: number;
+  // When true the cat fills its parent box (used to seat cats onto Aina's den
+  // drawing, where the perch size is controlled by a percentage-sized wrapper).
+  fill?: boolean;
   dimmed?: boolean;
   turned?: boolean;
   facing?: "left" | "right";
   className?: string;
 }
 
-export function ClanCat({ role, appearance, size = 88, dimmed, turned, facing = "right", className }: Props) {
+export function ClanCat({ role, appearance, size = 88, fill, dimmed, turned, facing = "right", className }: Props) {
   const src = ROLE_ART[role] ?? ROLE_ART.Warrior;
   const color = turned ? "#b9b2c6" : appearance.furColor;
   const eyeColor = turned ? "#c94a4a" : appearance.eyeColor;
@@ -354,7 +357,10 @@ export function ClanCat({ role, appearance, size = 88, dimmed, turned, facing = 
   }, [key, src, color, eyeColor, pattern, marking]);
 
   return (
-    <div className={className} style={{ width: size, height: size, display: "inline-block", lineHeight: 0 }}>
+    <div
+      className={className}
+      style={fill ? { width: "100%", height: "100%", lineHeight: 0 } : { width: size, height: size, display: "inline-block", lineHeight: 0 }}
+    >
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
         src={url ?? src}
