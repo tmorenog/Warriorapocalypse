@@ -1,4 +1,6 @@
-import React from "react";
+"use client";
+
+import React, { useEffect, useState } from "react";
 import type { WeatherId } from "@/engine/types";
 
 interface SceneProps {
@@ -7,6 +9,9 @@ interface SceneProps {
   night?: boolean;
   children?: React.ReactNode;
   height?: number | string;
+  // Fur colour for each cat Aina drew, in DEN_CAT_BOXES order (undefined = leave
+  // white). Used to tint her drawing so the den cats show each player's colours.
+  denColors?: (string | undefined)[];
 }
 
 // Aina's exact den drawing, used as the den background. The den scene is locked
@@ -14,39 +19,110 @@ interface SceneProps {
 export const DEN_IMAGE = "/art/scenes/den-aina.jpg";
 export const DEN_ASPECT = 1462 / 1110;
 
-// Where each recoloured cat sits ON Aina's drawing, covering her placeholder
-// cats. (x, y) is the cat's feet as a % of the box; h is its height as a % of
-// the box height so it scales with the drawing.
-export interface DenPerch {
-  x: number;
-  y: number;
-  h: number;
-  facing: "left" | "right";
-}
-export const DEN_PERCHES: DenPerch[] = [
-  { x: 48, y: 62, h: 40, facing: "right" }, // centre cut-log (sitting)
-  { x: 17, y: 65, h: 34, facing: "right" }, // left mossy stump (standing)
-  { x: 82, y: 66, h: 27, facing: "left" }, // right rock (curled)
-  { x: 68, y: 88, h: 26, facing: "right" }, // water barrel
-  { x: 79, y: 94, h: 15, facing: "left" }, // tiny ground cat
+// Bounding boxes (as fractions of the image) enclosing each white cat Aina drew,
+// in the same order as the den tap-spots: centre log, left stump, right rock,
+// barrel, ground. Used to tint just that cat's white fur.
+export const DEN_CAT_BOXES: [number, number, number, number][] = [
+  [0.37, 0.35, 0.55, 0.62], // centre cut-log (sitting)
+  [0.03, 0.44, 0.31, 0.64], // left mossy stump (standing, big tail)
+  [0.69, 0.55, 0.88, 0.69], // right rock (curled)
+  [0.6, 0.7, 0.74, 0.88], // water barrel
+  [0.74, 0.85, 0.84, 0.97], // tiny ground cat
 ];
 
+function hex2rgb(hex: string): { r: number; g: number; b: number } {
+  const h = hex.replace("#", "");
+  return { r: parseInt(h.slice(0, 2), 16), g: parseInt(h.slice(2, 4), 16), b: parseInt(h.slice(4, 6), 16) };
+}
+
+const denCache = new Map<string, string>();
+
+// Tint the white cats in Aina's drawing to each clan cat's fur colour, keeping
+// her black ink lines and the surfaces they sit on.
+function recolorDen(img: HTMLImageElement, colors: (string | undefined)[]): string {
+  const W = img.naturalWidth;
+  const H = img.naturalHeight;
+  const cv = document.createElement("canvas");
+  cv.width = W;
+  cv.height = H;
+  const ctx = cv.getContext("2d")!;
+  ctx.drawImage(img, 0, 0);
+  DEN_CAT_BOXES.forEach((box, i) => {
+    const hex = colors[i];
+    if (!hex) return;
+    const { r, g, b } = hex2rgb(hex);
+    const x0 = Math.max(0, Math.floor(box[0] * W));
+    const y0 = Math.max(0, Math.floor(box[1] * H));
+    const x1 = Math.min(W, Math.ceil(box[2] * W));
+    const y1 = Math.min(H, Math.ceil(box[3] * H));
+    const id = ctx.getImageData(x0, y0, x1 - x0, y1 - y0);
+    const d = id.data;
+    for (let p = 0; p < d.length; p += 4) {
+      const R = d[p];
+      const G = d[p + 1];
+      const B = d[p + 2];
+      const mn = Math.min(R, G, B);
+      const mx = Math.max(R, G, B);
+      // Near-white, low-saturation pixels are her cat's fur — tint them, keeping
+      // a touch of the original shading so edges stay soft.
+      if (mn > 196 && mx - mn < 34) {
+        const f = 0.6 + 0.4 * (mn / 255);
+        d[p] = Math.round(r * f);
+        d[p + 1] = Math.round(g * f);
+        d[p + 2] = Math.round(b * f);
+      }
+    }
+    ctx.putImageData(id, x0, y0);
+  });
+  return cv.toDataURL("image/png");
+}
+
+function DenBackground({ colors }: { colors: (string | undefined)[] }) {
+  const key = colors.map((c) => c ?? "-").join("|");
+  const [url, setUrl] = useState<string | null>(() => denCache.get(key) ?? null);
+  useEffect(() => {
+    if (denCache.has(key)) {
+      setUrl(denCache.get(key)!);
+      return;
+    }
+    let cancelled = false;
+    const img = new window.Image();
+    img.onload = () => {
+      if (cancelled) return;
+      try {
+        const u = recolorDen(img, colors);
+        denCache.set(key, u);
+        setUrl(u);
+      } catch {
+        setUrl(DEN_IMAGE);
+      }
+    };
+    img.onerror = () => {
+      if (!cancelled) setUrl(DEN_IMAGE);
+    };
+    img.src = DEN_IMAGE;
+    return () => {
+      cancelled = true;
+    };
+  }, [key]); // eslint-disable-line react-hooks/exhaustive-deps
+  // eslint-disable-next-line @next/next/no-img-element
+  return <img src={url ?? DEN_IMAGE} alt="The clan's den" className="absolute inset-0 h-full w-full object-cover" />;
+}
+
 // Reusable illustrated scene: layered SVG silhouettes + CSS gradients + weather.
-// The "den" variant is a hand-drawn torch-lit cave with stump / log / rock / barrel
-// perches, recreating Aina's reference art.
-export function Scene({ weather, variant = "forest", night, children, height = 220 }: SceneProps) {
+// The "den" variant is Aina's hand-drawn torch-lit cave, with her cats tinted to
+// the player's chosen colours.
+export function Scene({ weather, variant = "forest", night, children, height = 220, denColors }: SceneProps) {
   const isCave = variant === "den";
   if (isCave) {
     // The den IS Aina's drawing. Lock the box to the image's aspect ratio so the
-    // recoloured cats sit exactly on her perches; the taupe matches her paper so
-    // any letterbox blends in.
+    // cats line up; the taupe matches her paper so any letterbox blends in.
     return (
       <div
         className="relative mx-auto w-full overflow-hidden rounded-xl border border-fern/20"
         style={{ background: "#5a4f4f", aspectRatio: `${DEN_ASPECT}`, maxHeight: "72vh" }}
       >
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src={DEN_IMAGE} alt="The clan's den" className="absolute inset-0 h-full w-full object-cover" />
+        <DenBackground colors={denColors ?? []} />
         <div className="relative z-10 h-full">{children}</div>
       </div>
     );

@@ -51,10 +51,15 @@ export function DayScreen({ ctx }: { ctx: GameController }) {
       <div className="mt-3 grid grid-cols-1 gap-3 lg:grid-cols-[1fr_320px]">
         {/* Left: scene + roster + selected */}
         <div className="space-y-3">
-          <Scene weather={run.weather} variant={run.shelter.built ? "den" : "forest"} height="clamp(260px, 48vh, 460px)">
+          <Scene
+            weather={run.weather}
+            variant={run.shelter.built ? "den" : "forest"}
+            height="clamp(260px, 48vh, 460px)"
+            denColors={run.shelter.built ? run.cats.slice(0, 5).map((c) => (c.alive ? c.appearance.furColor : "#9a9a9a")) : undefined}
+          >
             {run.shelter.built ? (
-              /* The den IS Aina's drawing. Her cats ARE the clan — tap one to
-                 select/view it. */
+              /* The den IS Aina's drawing, tinted to the clan's colours. Her cats
+                 ARE the clan — tap one to select/view it. */
               <DenClan
                 cats={run.cats}
                 selectedCatId={run.selectedCatId}
@@ -264,22 +269,27 @@ function DenClan({
   selectedCatId: string;
   onView: (id: string) => void;
 }) {
-  const present = cats.filter((c) => c.alive && !c.onMission && !c.isEnemyTurned);
+  // Map by roster index so each cat keeps its spot (and colour) even if another
+  // one dies — the same order the drawing is tinted in.
   return (
     <div className="absolute inset-0">
-      {present.slice(0, DEN_SPOTS.length).map((c, i) => {
+      {cats.slice(0, DEN_SPOTS.length).map((c, i) => {
         const s = DEN_SPOTS[i];
+        const away = c.onMission || c.isEnemyTurned;
         return (
           <button
             key={c.id}
             onClick={() => onView(c.id)}
             aria-label={`View ${c.name}`}
             style={{ left: `${s.left}%`, top: `${s.top}%`, width: `${s.width}%`, height: `${s.height}%` }}
-            className={`group absolute rounded-xl transition ${c.id === selectedCatId ? "ring-2 ring-ember/80" : "hover:ring-2 hover:ring-parchment/40"}`}
+            className={`group absolute rounded-xl transition ${!c.alive ? "opacity-50" : ""} ${
+              c.id === selectedCatId ? "ring-2 ring-ember/80" : "hover:ring-2 hover:ring-parchment/40"
+            }`}
           >
             <span className="pointer-events-none absolute left-1/2 top-full flex -translate-x-1/2 flex-col items-center gap-0.5">
               <span className={`whitespace-nowrap rounded bg-black/65 px-1 text-[9px] font-semibold text-parchment transition ${c.id === selectedCatId ? "opacity-100" : "opacity-0 group-hover:opacity-100"}`}>
                 {c.name}
+                {!c.alive ? " ✝" : away ? " (away)" : ""}
               </span>
               <span className="h-1 w-8 overflow-hidden rounded-full bg-black/55">
                 <span className="block h-full rounded-full" style={{ width: `${c.meters.health}%`, background: c.meters.health > 45 ? "#8bab6a" : "#c15a5a" }} />
