@@ -52,9 +52,15 @@ export function DayScreen({ ctx }: { ctx: GameController }) {
         {/* Left: scene + roster + selected */}
         <div className="space-y-3">
           <Scene weather={run.weather} variant={run.shelter.built ? "den" : "forest"} height="clamp(260px, 48vh, 460px)">
-            {/* Once sheltered, the den IS Aina's drawing — shown on its own. Before
-                shelter, the forest scene shows the clan standing with a caption. */}
-            {!run.shelter.built && (
+            {run.shelter.built ? (
+              /* The den IS Aina's drawing. Her cats ARE the clan — tap one to
+                 select/view it. */
+              <DenClan
+                cats={run.cats}
+                selectedCatId={run.selectedCatId}
+                onView={(id) => { ctx.selectCat(id); setViewCatId(id); }}
+              />
+            ) : (
               <div className="flex h-full flex-col justify-between p-2">
                 <div className="flex flex-wrap gap-1">
                   <Badge color={CLANS[selected.clan].color}>{WEATHER_EFFECTS[run.weather].label}</Badge>
@@ -72,12 +78,14 @@ export function DayScreen({ ctx }: { ctx: GameController }) {
             )}
           </Scene>
 
-          {/* Cat roster (scrollable) */}
-          <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-thin">
-            {run.cats.map((c) => (
-              <CatChip key={c.id} cat={c} selected={c.id === run.selectedCatId} onSelect={() => ctx.selectCat(c.id)} />
-            ))}
-          </div>
+          {/* Cat roster — only before shelter; in the den the clan IS the drawing. */}
+          {!run.shelter.built && (
+            <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-thin">
+              {run.cats.map((c) => (
+                <CatChip key={c.id} cat={c} selected={c.id === run.selectedCatId} onSelect={() => ctx.selectCat(c.id)} />
+              ))}
+            </div>
+          )}
 
           {/* Desktop-visible panels */}
           <div className="hidden gap-3 sm:grid sm:grid-cols-2">
@@ -233,6 +241,54 @@ function CatChip({ cat, selected, onSelect }: { cat: Cat; selected: boolean; onS
       <span className="text-[9px] text-parchment/60">{cat.role}{cat.onMission ? " · away" : ""}</span>
       <div className="mt-1 w-full"><MeterBar kind="health" value={cat.meters.health} compact /></div>
     </button>
+  );
+}
+
+// Invisible tap targets sitting exactly over the cats Aina drew in the den, in
+// the order the clan is stored (your cat first). Tapping selects/opens that cat;
+// each shows a small name + health so the den works without a separate roster.
+const DEN_SPOTS = [
+  { left: 38, top: 34, width: 17, height: 28 }, // centre cut-log
+  { left: 3, top: 42, width: 27, height: 22 }, // left mossy stump
+  { left: 67, top: 54, width: 20, height: 16 }, // right rock
+  { left: 61, top: 68, width: 12, height: 20 }, // water barrel
+  { left: 73, top: 84, width: 10, height: 13 }, // tiny ground cat
+];
+
+function DenClan({
+  cats,
+  selectedCatId,
+  onView,
+}: {
+  cats: Cat[];
+  selectedCatId: string;
+  onView: (id: string) => void;
+}) {
+  const present = cats.filter((c) => c.alive && !c.onMission && !c.isEnemyTurned);
+  return (
+    <div className="absolute inset-0">
+      {present.slice(0, DEN_SPOTS.length).map((c, i) => {
+        const s = DEN_SPOTS[i];
+        return (
+          <button
+            key={c.id}
+            onClick={() => onView(c.id)}
+            aria-label={`View ${c.name}`}
+            style={{ left: `${s.left}%`, top: `${s.top}%`, width: `${s.width}%`, height: `${s.height}%` }}
+            className={`group absolute rounded-xl transition ${c.id === selectedCatId ? "ring-2 ring-ember/80" : "hover:ring-2 hover:ring-parchment/40"}`}
+          >
+            <span className="pointer-events-none absolute left-1/2 top-full flex -translate-x-1/2 flex-col items-center gap-0.5">
+              <span className={`whitespace-nowrap rounded bg-black/65 px-1 text-[9px] font-semibold text-parchment transition ${c.id === selectedCatId ? "opacity-100" : "opacity-0 group-hover:opacity-100"}`}>
+                {c.name}
+              </span>
+              <span className="h-1 w-8 overflow-hidden rounded-full bg-black/55">
+                <span className="block h-full rounded-full" style={{ width: `${c.meters.health}%`, background: c.meters.health > 45 ? "#8bab6a" : "#c15a5a" }} />
+              </span>
+            </span>
+          </button>
+        );
+      })}
+    </div>
   );
 }
 
