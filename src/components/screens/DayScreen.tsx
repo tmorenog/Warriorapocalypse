@@ -34,6 +34,8 @@ export function DayScreen({ ctx }: { ctx: GameController }) {
 
   const selected = run.cats.find((c) => c.id === run.selectedCatId) ?? run.cats[0];
   const timePct = (run.dayTimeRemainingMs / 60000) * 100;
+  // In the den, seat cats on Aina's drawing by role (leader on the log, etc.).
+  const denSpots = run.shelter.built ? assignDenSpots(run.cats) : null;
 
   const openModal = (m: "missions" | "shelter" | "inventory") => {
     ctx.setPaused(true);
@@ -58,20 +60,22 @@ export function DayScreen({ ctx }: { ctx: GameController }) {
             day={run.shelter.built ? run.day : undefined}
             coins={run.shelter.built ? ctx.meta?.coins : undefined}
             denCats={
-              run.shelter.built
-                ? run.cats.slice(0, 5).map((c) =>
-                    c.alive
-                      ? { fur: c.appearance.furColor, eye: c.appearance.eyeColor, pattern: c.appearance.furPattern, marking: c.appearance.markingColor }
-                      : { fur: "#9a9a9a", eye: "#6b6b6b" },
+              denSpots
+                ? denSpots.map((c) =>
+                    !c
+                      ? undefined
+                      : c.alive
+                        ? { fur: c.appearance.furColor, eye: c.appearance.eyeColor, pattern: c.appearance.furPattern, marking: c.appearance.markingColor }
+                        : { fur: "#9a9a9a", eye: "#6b6b6b" },
                   )
                 : undefined
             }
           >
-            {run.shelter.built ? (
+            {denSpots ? (
               /* The den IS Aina's drawing, tinted to the clan's colours. Her cats
-                 ARE the clan — tap one to select/view it. */
+                 ARE the clan, seated by role — tap one to select/view it. */
               <DenClan
-                cats={run.cats}
+                spots={denSpots}
                 selectedCatId={run.selectedCatId}
                 onView={(id) => { ctx.selectCat(id); setViewCatId(id); }}
               />
@@ -259,9 +263,9 @@ function CatChip({ cat, selected, onSelect }: { cat: Cat; selected: boolean; onS
   );
 }
 
-// Invisible tap targets sitting exactly over the cats Aina drew in the den, in
-// the order the clan is stored (your cat first). Tapping selects/opens that cat;
-// each shows a small name + health so the den works without a separate roster.
+// Tap targets sitting over the cats Aina drew in the den, in DEN_CAT_BOXES order:
+// centre log, left stump, right rock, barrel, ground. Tapping selects/opens that
+// cat; each shows a small name + health so the den works without a separate roster.
 const DEN_SPOTS = [
   { left: 38, top: 34, width: 17, height: 28 }, // centre cut-log
   { left: 3, top: 42, width: 27, height: 22 }, // left mossy stump
@@ -270,20 +274,45 @@ const DEN_SPOTS = [
   { left: 73, top: 84, width: 10, height: 13 }, // tiny ground cat
 ];
 
+// Seat cats on the drawing BY ROLE, not by pick order, so the leader takes the
+// centre log, the deputy the stump, the elder curls on the rock, a warrior sits
+// in the barrel, and the kit is on the ground. Leftover cats (e.g. a second
+// warrior when there's no elder) fill any open spot.
+const DEN_SPOT_ROLES = ["Leader", "Deputy", "Elder", "Warrior", "Kit"] as const;
+function assignDenSpots(cats: Cat[]): (Cat | null)[] {
+  const spots: (Cat | null)[] = [null, null, null, null, null];
+  const used = new Set<number>();
+  DEN_SPOT_ROLES.forEach((role, i) => {
+    const idx = cats.findIndex((c, ci) => !used.has(ci) && c.role === role);
+    if (idx >= 0) {
+      spots[i] = cats[idx];
+      used.add(idx);
+    }
+  });
+  const leftover = cats.map((_, ci) => ci).filter((ci) => !used.has(ci));
+  for (let i = 0; i < spots.length && leftover.length; i++) {
+    if (!spots[i]) {
+      const ci = leftover.shift()!;
+      spots[i] = cats[ci];
+      used.add(ci);
+    }
+  }
+  return spots;
+}
+
 function DenClan({
-  cats,
+  spots,
   selectedCatId,
   onView,
 }: {
-  cats: Cat[];
+  spots: (Cat | null)[];
   selectedCatId: string;
   onView: (id: string) => void;
 }) {
-  // Map by roster index so each cat keeps its spot (and colour) even if another
-  // one dies — the same order the drawing is tinted in.
   return (
     <div className="absolute inset-0">
-      {cats.slice(0, DEN_SPOTS.length).map((c, i) => {
+      {spots.map((c, i) => {
+        if (!c) return null;
         const s = DEN_SPOTS[i];
         const away = c.onMission || c.isEnemyTurned;
         return (
