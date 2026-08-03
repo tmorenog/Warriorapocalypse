@@ -9,9 +9,20 @@ interface SceneProps {
   night?: boolean;
   children?: React.ReactNode;
   height?: number | string;
-  // Fur colour for each cat Aina drew, in DEN_CAT_BOXES order (undefined = leave
-  // white). Used to tint her drawing so the den cats show each player's colours.
-  denColors?: (string | undefined)[];
+  // Appearance for each cat Aina drew, in DEN_CAT_BOXES order (undefined = leave
+  // white). Used to tint her drawing so the den cats show the player's colours,
+  // eyes, and pattern.
+  denCats?: (DenCatLook | undefined)[];
+  // Live values written into the drawing's "coins" box and "Day:" blank.
+  day?: number;
+  coins?: number;
+}
+
+export interface DenCatLook {
+  fur: string;
+  eye?: string;
+  pattern?: string;
+  marking?: string;
 }
 
 // Aina's exact den drawing, used as the den background. The den scene is locked
@@ -37,9 +48,46 @@ function hex2rgb(hex: string): { r: number; g: number; b: number } {
 
 const denCache = new Map<string, string>();
 
-// Tint the white cats in Aina's drawing to each clan cat's fur colour, keeping
-// her black ink lines and the surfaces they sit on.
-function recolorDen(img: HTMLImageElement, colors: (string | undefined)[]): string {
+// Warm the browser cache so the first recolour is quick (no lingering white cats).
+if (typeof window !== "undefined") {
+  const pre = new window.Image();
+  pre.src = DEN_IMAGE;
+}
+
+// Does this fur pixel take the darker pattern (marking) colour? Periods scale
+// with the cat's box so patterns look right at any size.
+function denPatternDark(pattern: string, x: number, y: number, w: number): boolean {
+  switch (pattern) {
+    case "stripe": {
+      const per = Math.max(8, w * 0.16);
+      return x % per < per * 0.4;
+    }
+    case "tabby": {
+      const per = Math.max(6, w * 0.12);
+      const s = x + Math.sin(y * 0.05) * per * 0.5;
+      return (((s % per) + per) % per) < per * 0.34;
+    }
+    case "spotted":
+    case "tortoiseshell": {
+      const per = Math.max(10, w * 0.2);
+      const gx = (x % per) - per / 2;
+      const gy = (y % per) - per / 2;
+      const r = per * 0.26;
+      return gx * gx + gy * gy < r * r;
+    }
+    case "patched": {
+      const cell = w * 0.42;
+      return (Math.floor(x / cell) + Math.floor(y / cell)) % 2 === 0;
+    }
+    default:
+      return false;
+  }
+}
+
+// Tint the white cats in Aina's drawing to each clan cat's colours, keeping her
+// black ink lines. Fur takes the fur colour + pattern; the small enclosed white
+// regions (the eyes) take the eye colour.
+function recolorDen(img: HTMLImageElement, cats: (DenCatLook | undefined)[]): string {
   const W = img.naturalWidth;
   const H = img.naturalHeight;
   const cv = document.createElement("canvas");
@@ -47,38 +95,95 @@ function recolorDen(img: HTMLImageElement, colors: (string | undefined)[]): stri
   cv.height = H;
   const ctx = cv.getContext("2d")!;
   ctx.drawImage(img, 0, 0);
+
   DEN_CAT_BOXES.forEach((box, i) => {
-    const hex = colors[i];
-    if (!hex) return;
-    const { r, g, b } = hex2rgb(hex);
+    const look = cats[i];
+    if (!look) return;
+    const fur = hex2rgb(look.fur);
+    const eye = hex2rgb(look.eye || "#4d7fb0");
+    const mark = hex2rgb(look.marking || "#efeee9");
+    const pattern = look.pattern || "solid";
+
     const x0 = Math.max(0, Math.floor(box[0] * W));
     const y0 = Math.max(0, Math.floor(box[1] * H));
     const x1 = Math.min(W, Math.ceil(box[2] * W));
     const y1 = Math.min(H, Math.ceil(box[3] * H));
-    const id = ctx.getImageData(x0, y0, x1 - x0, y1 - y0);
+    const w = x1 - x0;
+    const h = y1 - y0;
+    const id = ctx.getImageData(x0, y0, w, h);
     const d = id.data;
-    for (let p = 0; p < d.length; p += 4) {
-      const R = d[p];
-      const G = d[p + 1];
-      const B = d[p + 2];
+    const n = w * h;
+
+    // Mask of near-white (fur/eye) pixels.
+    const mask = new Uint8Array(n);
+    const shade = new Float32Array(n);
+    for (let k = 0; k < n; k++) {
+      const R = d[k * 4];
+      const G = d[k * 4 + 1];
+      const B = d[k * 4 + 2];
       const mn = Math.min(R, G, B);
-      const mx = Math.max(R, G, B);
-      // Near-white, low-saturation pixels are her cat's fur — tint them, keeping
-      // a touch of the original shading so edges stay soft.
-      if (mn > 196 && mx - mn < 34) {
-        const f = 0.6 + 0.4 * (mn / 255);
-        d[p] = Math.round(r * f);
-        d[p + 1] = Math.round(g * f);
-        d[p + 2] = Math.round(b * f);
+      if (mn > 196 && Math.max(R, G, B) - mn < 34) {
+        mask[k] = 1;
+        shade[k] = 0.62 + 0.38 * (mn / 255);
       }
+    }
+
+    // Label connected white regions (4-connectivity) to separate eyes from fur.
+    const label = new Int32Array(n);
+    const sizes: number[] = [0];
+    const touch: boolean[] = [false];
+    const stack: number[] = [];
+    let nextLabel = 1;
+    for (let s = 0; s < n; s++) {
+      if (!mask[s] || label[s]) continue;
+      const lb = nextLabel++;
+      sizes[lb] = 0;
+      touch[lb] = false;
+      stack.push(s);
+      label[s] = lb;
+      while (stack.length) {
+        const c = stack.pop()!;
+        const cy = (c / w) | 0;
+        const cx = c - cy * w;
+        sizes[lb]++;
+        if (cx === 0 || cy === 0 || cx === w - 1 || cy === h - 1) touch[lb] = true;
+        if (cx > 0 && mask[c - 1] && !label[c - 1]) { label[c - 1] = lb; stack.push(c - 1); }
+        if (cx < w - 1 && mask[c + 1] && !label[c + 1]) { label[c + 1] = lb; stack.push(c + 1); }
+        if (cy > 0 && mask[c - w] && !label[c - w]) { label[c - w] = lb; stack.push(c - w); }
+        if (cy < h - 1 && mask[c + w] && !label[c + w]) { label[c + w] = lb; stack.push(c + w); }
+      }
+    }
+    // Fur is the largest white region.
+    let furLabel = 0;
+    let furSize = 0;
+    for (let lb = 1; lb < nextLabel; lb++) {
+      if (sizes[lb] > furSize) { furSize = sizes[lb]; furLabel = lb; }
+    }
+
+    for (let k = 0; k < n; k++) {
+      if (!mask[k]) continue;
+      const lb = label[k];
+      const f = shade[k];
+      // Small enclosed white blobs that aren't the fur = eyes.
+      const isEye = lb !== furLabel && !touch[lb] && sizes[lb] < furSize * 0.16 && sizes[lb] > 3;
+      let col = fur;
+      if (isEye) {
+        col = eye;
+      } else if (denPatternDark(pattern, k % w, (k / w) | 0, w)) {
+        col = mark;
+      }
+      const ef = isEye ? 0.85 + 0.15 * (f - 0.62) / 0.38 : f;
+      d[k * 4] = Math.round(col.r * ef);
+      d[k * 4 + 1] = Math.round(col.g * ef);
+      d[k * 4 + 2] = Math.round(col.b * ef);
     }
     ctx.putImageData(id, x0, y0);
   });
   return cv.toDataURL("image/png");
 }
 
-function DenBackground({ colors }: { colors: (string | undefined)[] }) {
-  const key = colors.map((c) => c ?? "-").join("|");
+function DenBackground({ cats }: { cats: (DenCatLook | undefined)[] }) {
+  const key = cats.map((c) => (c ? `${c.fur}:${c.eye}:${c.pattern}:${c.marking}` : "-")).join("|");
   const [url, setUrl] = useState<string | null>(() => denCache.get(key) ?? null);
   useEffect(() => {
     if (denCache.has(key)) {
@@ -90,7 +195,7 @@ function DenBackground({ colors }: { colors: (string | undefined)[] }) {
     img.onload = () => {
       if (cancelled) return;
       try {
-        const u = recolorDen(img, colors);
+        const u = recolorDen(img, cats);
         denCache.set(key, u);
         setUrl(u);
       } catch {
@@ -112,7 +217,7 @@ function DenBackground({ colors }: { colors: (string | undefined)[] }) {
 // Reusable illustrated scene: layered SVG silhouettes + CSS gradients + weather.
 // The "den" variant is Aina's hand-drawn torch-lit cave, with her cats tinted to
 // the player's chosen colours.
-export function Scene({ weather, variant = "forest", night, children, height = 220, denColors }: SceneProps) {
+export function Scene({ weather, variant = "forest", night, children, height = 220, denCats, day, coins }: SceneProps) {
   const isCave = variant === "den";
   if (isCave) {
     // The den IS Aina's drawing. Lock the box to the image's aspect ratio so the
@@ -122,7 +227,24 @@ export function Scene({ weather, variant = "forest", night, children, height = 2
         className="relative mx-auto w-full overflow-hidden rounded-xl border border-fern/20"
         style={{ background: "#5a4f4f", aspectRatio: `${DEN_ASPECT}`, maxHeight: "72vh" }}
       >
-        <DenBackground colors={denColors ?? []} />
+        <DenBackground cats={denCats ?? []} />
+        {/* Live values written into the coins box and the "Day:" blank she drew. */}
+        {typeof coins === "number" && (
+          <span
+            className="absolute z-20 font-display font-bold text-[#3a2f26]"
+            style={{ left: "7.5%", top: "1.6%", fontSize: "clamp(9px,1.6vw,15px)" }}
+          >
+            {coins}
+          </span>
+        )}
+        {typeof day === "number" && (
+          <span
+            className="absolute z-20 font-display font-bold text-parchment"
+            style={{ left: "85.5%", top: "2.5%", fontSize: "clamp(11px,2vw,20px)" }}
+          >
+            {day}
+          </span>
+        )}
         <div className="relative z-10 h-full">{children}</div>
       </div>
     );

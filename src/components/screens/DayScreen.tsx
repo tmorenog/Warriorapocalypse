@@ -55,7 +55,17 @@ export function DayScreen({ ctx }: { ctx: GameController }) {
             weather={run.weather}
             variant={run.shelter.built ? "den" : "forest"}
             height="clamp(260px, 48vh, 460px)"
-            denColors={run.shelter.built ? run.cats.slice(0, 5).map((c) => (c.alive ? c.appearance.furColor : "#9a9a9a")) : undefined}
+            day={run.shelter.built ? run.day : undefined}
+            coins={run.shelter.built ? ctx.meta?.coins : undefined}
+            denCats={
+              run.shelter.built
+                ? run.cats.slice(0, 5).map((c) =>
+                    c.alive
+                      ? { fur: c.appearance.furColor, eye: c.appearance.eyeColor, pattern: c.appearance.furPattern, marking: c.appearance.markingColor }
+                      : { fur: "#9a9a9a", eye: "#6b6b6b" },
+                  )
+                : undefined
+            }
           >
             {run.shelter.built ? (
               /* The den IS Aina's drawing, tinted to the clan's colours. Her cats
