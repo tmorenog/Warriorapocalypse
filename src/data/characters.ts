@@ -266,8 +266,8 @@ const SEEDS: Seed[] = [
     attack: 17, defense: 14, hunting: 16, medicine: 3, stealth: 12, speed: 15,
     passive: ["river_charm", "River Charm", "A little better at calming frightened survivors."],
     battle: ["current_dash", "Current Dash", "A quick strike that can lower the target's speed."],
-    description: "A handsome dark brown tabby tom of RiverClan — charming, and quick to move on.",
-    appearance: { furColor: "#6b4b2c", furPattern: "tabby", eyeColor: "#4d7fb0" },
+    description: "A handsome sandy tabby tom of RiverClan with a plumed tail — charming, and quick to move on.",
+    appearance: { furColor: "#e0b268", furPattern: "tabby", eyeColor: "#3f9e46", artSrc: "/art/cats/appledusk.jpg" },
   },
   // ---- Kits (original young cats) ----
   {
