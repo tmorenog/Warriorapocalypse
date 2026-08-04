@@ -2,6 +2,7 @@ import React, { useMemo, useState } from "react";
 import type { GameController } from "@/game/useGameController";
 import type { Cat } from "@/engine/types";
 import { CLANS } from "@/data/clans";
+import { roleLabel } from "@/data/roles";
 import { ITEMS_BY_ID } from "@/data/items";
 import { MISSIONS, MISSIONS_BY_ID } from "@/data/missions";
 import { SHELTER_UPGRADES, SHELTER_UPGRADES_BY_ID } from "@/data/shelters";
@@ -211,7 +212,7 @@ function FullscreenCat({ ctx, catId, onClose }: { ctx: GameController; catId: st
         <div className="mt-1 text-center">
           <div className="font-display text-2xl text-parchment">{cat.name}</div>
           <div className="mt-1 flex justify-center gap-1">
-            <Badge color={CLANS[cat.clan].color}>{cat.role}</Badge>
+            <Badge color={CLANS[cat.clan].color}>{roleLabel(cat.role)}</Badge>
             <Badge>{cat.clan}</Badge>
             {cat.infectionStage !== "None" && <Badge color="#8a5cc4">{cat.infectionStage}</Badge>}
           </div>
@@ -260,7 +261,7 @@ function CatChip({ cat, selected, onSelect }: { cat: Cat; selected: boolean; onS
     >
       <CatPortrait appearance={cat.appearance} role={cat.role} cosmetics={cat.cosmetics} size={44} dimmed={!cat.alive} turned={cat.isEnemyTurned} />
       <span className="mt-0.5 truncate text-[11px] font-semibold text-parchment">{cat.name}</span>
-      <span className="text-[9px] text-parchment/60">{cat.role}{cat.onMission ? " · away" : ""}</span>
+      <span className="text-[9px] text-parchment/60">{roleLabel(cat.role)}{cat.onMission ? " · away" : ""}</span>
       <div className="mt-1 w-full"><MeterBar kind="health" value={cat.meters.health} compact /></div>
     </button>
   );
@@ -284,7 +285,7 @@ const DEN_SPOTS = [
 const DEN_ART_PLACEMENT: Record<number, { cx: number; feet: number; size: number }> = {
   0: { cx: 46, feet: 57, size: 26 }, // on the centre log
   1: { cx: 17, feet: 61, size: 28 }, // on the left stump
-  2: { cx: 78, feet: 65, size: 25 }, // on the right rock
+  2: { cx: 77, feet: 64, size: 20 }, // on the right rock
   3: { cx: 67, feet: 90, size: 26 }, // on the barrel
   4: { cx: 79, feet: 95, size: 17 }, // on the ground
 };
@@ -425,7 +426,7 @@ function SceneCats({
 
 function SelectedCatPanel({ ctx, cat }: { ctx: GameController; cat: Cat }) {
   return (
-    <Panel title={`${cat.name} — ${cat.role} of ${cat.clan}`}>
+    <Panel title={`${cat.name} — ${roleLabel(cat.role)} of ${cat.clan}`}>
       <div className="flex gap-3">
         <CatPortrait appearance={cat.appearance} role={cat.role} cosmetics={cat.cosmetics} size={70} dimmed={!cat.alive} turned={cat.isEnemyTurned} />
         <div className="flex-1 space-y-1">
@@ -443,7 +444,7 @@ function SelectedCatPanel({ ctx, cat }: { ctx: GameController; cat: Cat }) {
       </div>
       {cat.meters.infection > 0 && cat.alive && (
         <div className="mt-2">
-          <p className="mb-1 text-[11px] text-parchment/70">Treat infection with the Elder:</p>
+          <p className="mb-1 text-[11px] text-parchment/70">Treat infection with the Med Cat:</p>
           <div className="flex flex-wrap gap-1">
             <Button className="px-2 py-1 text-xs" onClick={() => ctx.treatCat(cat.id)}>Basic care</Button>
             {HERBS.slice(0, 4).map((h) => (
@@ -636,7 +637,7 @@ function MissionsInline({ ctx }: { ctx: GameController }) {
               className={`flex items-center gap-1 rounded border p-1 text-left text-[11px] ${selectedCats.includes(c.id) ? "border-ember bg-ember/20" : "border-fern/20 bg-black/20"}`}
             >
               <CatPortrait appearance={c.appearance} role={c.role} size={26} />
-              <span className="truncate">{c.name} <span className="text-parchment/50">({c.role})</span></span>
+              <span className="truncate">{c.name} <span className="text-parchment/50">({roleLabel(c.role)})</span></span>
             </button>
           ))}
         </div>
@@ -649,7 +650,7 @@ function MissionsInline({ ctx }: { ctx: GameController }) {
           <div className="text-parchment/50">Exact outcomes are never guaranteed.</div>
         </div>
       )}
-      {!kitOk && <p className="text-xs text-red-300">The kit cannot go without a Leader, Deputy, Warrior, or Elder.</p>}
+      {!kitOk && <p className="text-xs text-red-300">The kit cannot go without a Leader, Deputy, Warrior, or Med Cat.</p>}
 
       <Button variant="primary" className="w-full" disabled={chosen.length === 0 || !kitOk} onClick={confirm}>
         Send on Mission

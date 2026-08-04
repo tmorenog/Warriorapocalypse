@@ -9,7 +9,7 @@ import {
   makeRoomCode,
 } from "@/multiplayer/supabase";
 import { Button, Panel, Badge } from "@/components/ui/primitives";
-import { REQUIRED_ROLES } from "@/data/roles";
+import { REQUIRED_ROLES, roleLabel } from "@/data/roles";
 
 interface Presence {
   name: string;
@@ -152,7 +152,7 @@ export function MultiplayerScreen({ ctx }: { ctx: GameController }) {
               <li key={i} className="flex items-center justify-between rounded bg-black/25 px-2 py-1 text-sm">
                 <span className="text-parchment">{p.name}</span>
                 <span className="flex gap-1">
-                  <Badge>{p.role}</Badge>
+                  <Badge>{roleLabel(p.role)}</Badge>
                   {p.isHost && <Badge color="#c76b3b">Host</Badge>}
                 </span>
               </li>

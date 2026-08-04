@@ -5,6 +5,7 @@ import { CLANS, CLAN_LIST } from "@/data/clans";
 import { UPGRADES, upgradePrice } from "@/data/upgrades";
 import { COSMETICS } from "@/data/cosmetics";
 import { ACHIEVEMENTS } from "@/data/achievements";
+import { roleLabel } from "@/data/roles";
 import { CatPortrait } from "@/components/art/CatPortrait";
 import { Button, Panel, Badge } from "@/components/ui/primitives";
 import { exportRun } from "@/persistence/storage";
@@ -33,12 +34,12 @@ export function CollectionScreen({ ctx }: { ctx: GameController }) {
           <button key={c.id} onClick={() => setDetail(c.id)} className="flex flex-col items-center rounded-lg border border-fern/20 bg-black/20 p-2 hover:bg-black/40">
             <CatPortrait appearance={c.appearance} role={c.role} size={56} />
             <span className="mt-1 text-sm font-semibold text-parchment">{c.name}</span>
-            <span className="text-[10px]" style={{ color: CLANS[c.clan].color }}>{c.clan} · {c.role}</span>
+            <span className="text-[10px]" style={{ color: CLANS[c.clan].color }}>{c.clan} · {roleLabel(c.role)}</span>
           </button>
         ))}
       </div>
       {cat && (
-        <Panel title={`${cat.name} — ${cat.role} of ${cat.clan}`} className="mt-4">
+        <Panel title={`${cat.name} — ${roleLabel(cat.role)} of ${cat.clan}`} className="mt-4">
           <div className="flex gap-3">
             <CatPortrait appearance={cat.appearance} role={cat.role} size={80} />
             <div className="text-xs text-parchment/80">
@@ -152,10 +153,10 @@ export function HowToPlayScreen({ ctx }: { ctx: GameController }) {
         </Section>
         <Section title="Missions">
           Send cats to hunt, gather herbs, find water, rescue survivors, and more. More cats mean better
-          odds but more risk and energy. The kit can never leave without a Leader, Deputy, Warrior, or Elder.
+          odds but more risk and energy. The kit can never leave without a Leader, Deputy, Warrior, or Med Cat.
         </Section>
         <Section title="Infection & Battles">
-          Bites and contaminated food spread infection through five stages. Your Elder can treat it —
+          Bites and contaminated food spread infection through five stages. Your Med Cat can treat it —
           early is easiest. Battles are turn-based: attack, defend, use abilities, heal, or escape.
         </Section>
         <Section title="Clans">

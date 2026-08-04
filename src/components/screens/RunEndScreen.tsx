@@ -1,6 +1,7 @@
 import React from "react";
 import type { GameController } from "@/game/useGameController";
 import { ENDINGS_BY_ID } from "@/data/endings";
+import { roleLabel } from "@/data/roles";
 import { CatPortrait } from "@/components/art/CatPortrait";
 import { Button, Panel } from "@/components/ui/primitives";
 import { Scene } from "@/components/art/Scene";
@@ -48,7 +49,7 @@ export function RunEndScreen({ ctx }: { ctx: GameController }) {
             {survivors.map((c) => (
               <div key={c.id} className="flex items-center gap-1 rounded bg-black/25 p-1 text-xs">
                 <CatPortrait appearance={c.appearance} role={c.role} cosmetics={c.cosmetics} size={30} />
-                <span>{c.name} <span className="text-parchment/50">({c.role})</span></span>
+                <span>{c.name} <span className="text-parchment/50">({roleLabel(c.role)})</span></span>
               </div>
             ))}
           </div>

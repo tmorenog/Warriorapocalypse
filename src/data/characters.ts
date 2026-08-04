@@ -99,7 +99,7 @@ const SEEDS: Seed[] = [
     passive: ["herb_wisdom", "Herb Wisdom", "Herbs treat infection more effectively in her paws."],
     battle: ["bitter_poultice", "Bitter Poultice", "Heals an ally and reduces their infection risk."],
     description: "A grizzled dark gray she-cat with a sharp tongue and unmatched knowledge of herbs.",
-    appearance: { furColor: "#5a5b60", furPattern: "solid", eyeColor: "#d67a2a", scars: "ear", bodyType: "large" },
+    appearance: { furColor: "#5a5b60", furPattern: "solid", eyeColor: "#d67a2a", scars: "ear", bodyType: "large", artSrc: "/art/cats/yellowfang.jpg" },
   },
   {
     id: "cinderpelt",

@@ -3,6 +3,7 @@ import type { GameController } from "@/game/useGameController";
 import type { CharacterDef, Difficulty } from "@/engine/types";
 import { BOOK_CHARACTERS } from "@/data/characters";
 import { CLANS } from "@/data/clans";
+import { roleLabel } from "@/data/roles";
 import { DIFFICULTY_PRESETS } from "@/config/balance";
 import { CatPortrait } from "@/components/art/CatPortrait";
 import { CatSprite } from "@/components/art/CatSprite";
@@ -119,8 +120,8 @@ export function NewGameScreen({ ctx }: { ctx: GameController }) {
 
       <Panel title={`Choose 4 Clanmates (${clanmates.length}/4)`} className="mb-4">
         <p className="mb-2 text-xs text-parchment/60">
-          A clan needs a <strong className="text-fern">Leader, Deputy, Warrior, and Kit</strong>. An
-          <strong className="text-fern"> Elder</strong> (your healer) is optional — bring one, or take a
+          A clan needs a <strong className="text-fern">Leader, Deputy, Warrior, and Kit</strong>. A
+          <strong className="text-fern"> Med Cat</strong> (your healer) is optional — bring one, or take a
           second Warrior instead and survive on grit. <strong className="text-parchment/80">Your own cat
           counts too</strong> — if you picked a Leader, that slot is already filled.
         </p>
@@ -140,7 +141,7 @@ export function NewGameScreen({ ctx }: { ctx: GameController }) {
                 <CatSprite appearance={c.appearance} role={c.role} size={72} />
                 <div className="mt-1 text-center text-xs">
                   <div className="font-semibold text-parchment">{c.name}</div>
-                  <Badge color={CLANS[c.clan].color}>{c.role}</Badge>
+                  <Badge color={CLANS[c.clan].color}>{roleLabel(c.role)}</Badge>
                 </div>
               </div>
             ))}
@@ -148,7 +149,7 @@ export function NewGameScreen({ ctx }: { ctx: GameController }) {
           {!validity.ok && <p className="mt-2 text-xs text-ember">{validity.reason}</p>}
           {validity.ok && validity.noElder && (
             <p className="mt-2 text-xs text-yellow-300">
-              No Elder — with no skilled healer, wounds fester and the sickness spreads faster. You&rsquo;ll survive, but not as long.
+              No Med Cat — with no skilled healer, wounds fester and the sickness spreads faster. You&rsquo;ll survive, but not as long.
             </p>
           )}
         </Panel>
@@ -185,7 +186,7 @@ function RoleCoverage({ main, mates }: { main: CharacterDef; mates: CharacterDef
     { role: "Deputy", label: "Deputy", need: "one" },
     { role: "Warrior", label: "Warrior", need: "some" },
     { role: "Kit", label: "Kit", need: "one" },
-    { role: "Elder", label: "Elder", need: "opt" },
+    { role: "Elder", label: "Med Cat", need: "opt" },
   ];
   return (
     <div className="mb-2 flex flex-wrap gap-1">
@@ -240,7 +241,7 @@ function CharacterGrid({
             <div className="min-w-0">
               <div className="truncate text-sm font-semibold text-parchment">{c.name}</div>
               <div className="truncate text-[11px]" style={{ color: CLANS[c.clan].color }}>
-                {c.clan} · {c.role}
+                {c.clan} · {roleLabel(c.role)}
               </div>
             </div>
           </button>

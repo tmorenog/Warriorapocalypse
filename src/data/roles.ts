@@ -52,8 +52,8 @@ export const ROLES: Record<RoleId, RoleDef> = {
   },
   Elder: {
     id: "Elder",
-    name: "Elder",
-    summary: "Tends wounds with old remedies and shares hard-won wisdom.",
+    name: "Med Cat",
+    summary: "Tends wounds with herbs and old remedies.",
     abilities: [
       "Treats wounds with old remedies",
       "Reduces early infection",
@@ -80,6 +80,11 @@ export const ROLES: Record<RoleId, RoleDef> = {
 };
 
 export const ROLE_LIST = Object.values(ROLES);
+
+// Display label for a role id (internal "Elder" shows as "Med Cat").
+export function roleLabel(role: string): string {
+  return (ROLES as Record<string, RoleDef>)[role]?.name ?? role;
+}
 export const REQUIRED_ROLES: RoleId[] = ["Leader", "Deputy", "Warrior", "Elder", "Kit"];
 
 // Roles that can protect / escort a kit on a mission.
