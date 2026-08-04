@@ -55,13 +55,15 @@ interface DenErase {
   top: number;
   perchY: number;
   bot: number;
+  wx0?: number; // white-removal zone x (defaults to x0/x1); can be wider/deeper
+  wx1?: number;
 }
 const DEN_ERASE: Record<number, DenErase> = {
-  0: { x0: 0.35, x1: 0.575, top: 0.31, perchY: 0.52, bot: 0.6 }, // centre log
-  1: { x0: 0.0, x1: 0.335, top: 0.41, perchY: 0.57, bot: 0.72 }, // stump
-  2: { x0: 0.66, x1: 0.9, top: 0.52, perchY: 0.52, bot: 0.7 }, // rock (all on-perch)
-  3: { x0: 0.565, x1: 0.7, top: 0.66, perchY: 0.9, bot: 0.9 }, // barrel (all taupe, off the rock)
-  4: { x0: 0.71, x1: 0.87, top: 0.83, perchY: 0.97, bot: 0.97 }, // ground (all taupe)
+  0: { x0: 0.35, x1: 0.575, top: 0.31, perchY: 0.52, bot: 0.68 }, // centre log
+  1: { x0: 0.13, x1: 0.335, top: 0.41, perchY: 0.57, bot: 0.83, wx0: 0.0, wx1: 0.35 }, // stump (taupe off the torch)
+  2: { x0: 0.66, x1: 0.9, top: 0.52, perchY: 0.52, bot: 0.72 }, // rock (all on-perch)
+  3: { x0: 0.565, x1: 0.7, top: 0.66, perchY: 0.79, bot: 1.0, wx0: 0.53, wx1: 0.76 }, // barrel
+  4: { x0: 0.71, x1: 0.88, top: 0.83, perchY: 0.83, bot: 1.0 }, // ground (white-remove)
 };
 
 
@@ -138,27 +140,30 @@ function recolorDen(img: HTMLImageElement, cats: (DenCatLook | undefined)[]): st
       const TOP = Math.max(0, Math.floor((r ? r.top : box[1]) * H));
       const MID = Math.max(0, Math.floor((r ? r.perchY : box[1]) * H));
       const BOT = Math.min(H, Math.ceil((r ? r.bot : box[3] + 0.12) * H));
-      // Above the perch (plain taupe): paint the whole strip out — removes the
-      // old cat's upper body AND its outline.
-      if (MID > TOP && X1 > X0) {
-        ctx.fillStyle = bgCss;
-        ctx.fillRect(X0, TOP, X1 - X0, MID - TOP);
-      }
-      // On the perch: remove only the old cat's near-white fill AND its dark
-      // outline pixels that are thin (the cat's ink) — but keep the perch. We do
-      // this by replacing near-white with the perch colour sampled just below.
-      if (BOT > MID && X1 > X0) {
-        const eid = ctx.getImageData(X0, MID, X1 - X0, BOT - MID);
+      const WX0 = Math.max(0, Math.floor((r && r.wx0 != null ? r.wx0 : r ? r.x0 : box[0]) * W));
+      const WX1 = Math.min(W, Math.ceil((r && r.wx1 != null ? r.wx1 : r ? r.x1 : box[2]) * W));
+
+      // 1) Remove ALL of the old cat's near-white pixels over the whole region
+      //    (fur, tail, paws). The coloured perch and the torch aren't near-white,
+      //    so they stay — only the white cat disappears.
+      if (BOT > TOP && WX1 > WX0) {
+        const eid = ctx.getImageData(WX0, TOP, WX1 - WX0, BOT - TOP);
         const ed = eid.data;
-        const cnt = (X1 - X0) * (BOT - MID);
+        const cnt = (WX1 - WX0) * (BOT - TOP);
         for (let k = 0; k < cnt; k++) {
-          if (Math.min(ed[k * 4], ed[k * 4 + 1], ed[k * 4 + 2]) > 198) {
+          if (Math.min(ed[k * 4], ed[k * 4 + 1], ed[k * 4 + 2]) > 190) {
             ed[k * 4] = bgPix[0];
             ed[k * 4 + 1] = bgPix[1];
             ed[k * 4 + 2] = bgPix[2];
           }
         }
-        ctx.putImageData(eid, X0, MID);
+        ctx.putImageData(eid, WX0, TOP);
+      }
+      // 2) Taupe-wipe the safe strip above the perch to clear the old cat's dark
+      //    outline there (kept clear of the torch / neighbours).
+      if (MID > TOP && X1 > X0) {
+        ctx.fillStyle = bgCss;
+        ctx.fillRect(X0, TOP, X1 - X0, MID - TOP);
       }
       return;
     }
