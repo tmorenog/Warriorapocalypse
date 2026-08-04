@@ -44,15 +44,6 @@ export const DEN_CAT_BOXES: [number, number, number, number][] = [
   [0.74, 0.85, 0.84, 0.97], // tiny ground cat
 ];
 
-// When a finished-art cat stands on a spot, erase the whole drawn cat AND its
-// perch (paint out with the background) so nothing peeks. Per spot index.
-const DEN_ERASE_BOXES: Record<number, [number, number, number, number]> = {
-  0: [0.34, 0.32, 0.58, 0.9], // centre log
-  1: [0.0, 0.44, 0.35, 0.9], // left stump
-  2: [0.66, 0.53, 0.9, 0.72], // right rock
-  3: [0.55, 0.7, 0.77, 0.99], // barrel
-  4: [0.71, 0.83, 0.87, 1.0], // ground
-};
 
 function hex2rgb(hex: string): { r: number; g: number; b: number } {
   const h = hex.replace("#", "");
@@ -121,15 +112,25 @@ function recolorDen(img: HTMLImageElement, cats: (DenCatLook | undefined)[]): st
     // Erase: paint the whole spot (drawn cat + its perch) out with the background
     // so a finished-art cat can stand there with nothing peeking behind.
     if (look.erase) {
-      // Paint out the drawn cat + its perch with the background. Uses a per-spot
-      // region so it covers the whole perch without touching neighbours.
-      const eb = DEN_ERASE_BOXES[i] ?? box;
-      const ex0 = Math.max(0, eb[0] * W);
-      const ey0 = Math.max(0, eb[1] * H);
-      const ex1 = Math.min(W, eb[2] * W);
-      const ey1 = Math.min(H, eb[3] * H);
-      ctx.fillStyle = bgCss;
-      ctx.fillRect(ex0, ey0, ex1 - ex0, ey1 - ey0);
+      // Remove only the drawn cat (its white pixels), keeping the coloured perch
+      // (brown log / green moss / blue barrel / grey rock). Extend down a little
+      // to catch paws sitting inside a perch. The new cat's art covers the rest.
+      const ex0 = Math.max(0, Math.floor((box[0] - 0.02) * W));
+      const ey0 = Math.max(0, Math.floor((box[1] - 0.02) * H));
+      const ex1 = Math.min(W, Math.ceil((box[2] + 0.02) * W));
+      const ey1 = Math.min(H, Math.ceil((box[3] + 0.12) * H));
+      const ew = ex1 - ex0;
+      const eh = ey1 - ey0;
+      const eid = ctx.getImageData(ex0, ey0, ew, eh);
+      const ed = eid.data;
+      for (let k = 0; k < ew * eh; k++) {
+        if (Math.min(ed[k * 4], ed[k * 4 + 1], ed[k * 4 + 2]) > 198) {
+          ed[k * 4] = bgPix[0];
+          ed[k * 4 + 1] = bgPix[1];
+          ed[k * 4 + 2] = bgPix[2];
+        }
+      }
+      ctx.putImageData(eid, ex0, ey0);
       return;
     }
 

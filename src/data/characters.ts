@@ -171,7 +171,7 @@ const SEEDS: Seed[] = [
     passive: ["wary_eyes", "Wary Eyes", "Lowers the chance of ambush on missions he joins."],
     battle: ["shadow_slip", "Shadow Slip", "Greatly improves the group's escape chance this round."],
     description: "A sleek black tom with a white dash on his chest and tail-tip, gentle but ever watchful.",
-    appearance: { furColor: "#2a2b30", furPattern: "solid", eyeColor: "#4a8f3c", tailStyle: "tipped" },
+    appearance: { furColor: "#2a2b30", furPattern: "solid", eyeColor: "#4a8f3c", tailStyle: "tipped", artSrc: "/art/cats/ravenpaw.jpg" },
   },
   {
     id: "tallstar",

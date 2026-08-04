@@ -279,12 +279,14 @@ const DEN_SPOTS = [
 
 // Placement of a finished-art cat on each den spot: centre x, feet line, and
 // size (all % of the scene). Tuned so each stands on its perch.
+// Positioned directly over the old drawn cat so the new art covers it (including
+// its outline). Feet on the perch surface.
 const DEN_ART_PLACEMENT: Record<number, { cx: number; feet: number; size: number }> = {
-  0: { cx: 46, feet: 62, size: 30 }, // centre log
-  1: { cx: 20, feet: 64, size: 28 }, // left stump
-  2: { cx: 78, feet: 66, size: 26 }, // right rock
-  3: { cx: 60, feet: 91, size: 28 }, // barrel
-  4: { cx: 79, feet: 97, size: 18 }, // ground
+  0: { cx: 46, feet: 57, size: 26 }, // on the centre log
+  1: { cx: 17, feet: 61, size: 28 }, // on the left stump
+  2: { cx: 78, feet: 65, size: 25 }, // on the right rock
+  3: { cx: 67, feet: 90, size: 26 }, // on the barrel
+  4: { cx: 79, feet: 95, size: 17 }, // on the ground
 };
 
 // Seat cats on the drawing BY ROLE, not by pick order, so the leader takes the
