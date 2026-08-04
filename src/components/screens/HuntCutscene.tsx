@@ -5,15 +5,16 @@ import React, { useEffect, useState } from "react";
 // Aina's hand-drawn hunt, played as a tiny game: press Walk to sneak closer, then
 // press POUNCE at the right moment. Pounce too early or sneak too far and the
 // mouse gets away — no prey.
-const FRAMES = Array.from({ length: 12 }, (_, i) => `/art/gallery/anim-hunt/frame${i + 1}.jpg`);
+const FRAMES = Array.from({ length: 12 }, (_, i) => `/art/gallery/anim-hunt2/frame${i + 1}.jpg`);
 
-// Walk steps show frames 1..7; the good pounce window is when the cat is close.
-const WALK_MAX = 6; // step that means "one more = too far"
-const POUNCE_MIN = 4;
-const POUNCE_MAX = 6;
-// Pounce → caught plays frames 8..12.
-const POUNCE_FRAMES = [7, 8, 9, 10, 11];
-const FPS = 4;
+// Frames 1..9 are the creep toward the mouse; 10 is the mid-air leap, 11 the
+// landing on it, 12 the catch. Walk shows frames 1..9; pounce plays the leap.
+const WALK_MAX = 8; // walk step 8 = frame 9 (closest creep); one more = too far
+const POUNCE_MIN = 6; // pounce window: frames 7..9, once the cat is near enough
+const POUNCE_MAX = 8;
+// Pounce → caught plays frames 10..11 (leap + landing), then lands on frame 12.
+const POUNCE_FRAMES = [9, 10];
+const FPS = 5;
 
 if (typeof window !== "undefined") {
   FRAMES.forEach((src) => {
