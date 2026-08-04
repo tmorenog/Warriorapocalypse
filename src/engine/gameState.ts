@@ -13,6 +13,7 @@ import type {
   ActiveMission,
 } from "./types";
 import { CLANS } from "@/data/clans";
+import { getCharacterDef } from "@/data/characters";
 import { ITEMS_BY_ID, FOOD_ITEMS } from "@/data/items";
 import { applyDailyDrain, applyRest, feedCat, waterCat, injureCat } from "./meters";
 import { growInfection, exposeCat, recomputeStage, turnCat } from "./infection";
@@ -259,6 +260,21 @@ export function advanceDay(run: RunState, meta: MetaProfile | null): DayAdvanceR
   let next: RunState = { ...run, day: run.day + 1, dayTimeRemainingMs: BALANCE.dayDurationMs };
   const droughtSurvived = run.weather === "Drought";
 
+  // A cat wearing a temporary "bloodied" portrait sheds it once its day passes,
+  // restoring the normal art from its character definition.
+  next = {
+    ...next,
+    cats: next.cats.map((c) => {
+      if (c.bloodyUntilDay == null || next.day <= c.bloodyUntilDay) return c;
+      const def = getCharacterDef(c.defId);
+      return {
+        ...c,
+        bloodyUntilDay: null,
+        appearance: { ...c.appearance, artSrc: def?.appearance.artSrc },
+      };
+    }),
+  };
+
   // Weather transition.
   const newWeather = rollWeather(rng, next.weather);
   next = { ...next, weather: newWeather };
@@ -357,6 +373,12 @@ export function advanceDay(run: RunState, meta: MetaProfile | null): DayAdvanceR
     const apple = next.cats.find((c) => c.defId === "appledusk" && c.alive && !c.onMission);
     if (maple && apple && rng.chance(0.12)) {
       next = updateCat(next, apple.id, (c) => killCat(c, "Killed by Mapleshade"));
+      // Mapleshade wears the blood of her old score for the rest of this day.
+      next = updateCat(next, maple.id, (c) => ({
+        ...c,
+        bloodyUntilDay: next.day,
+        appearance: { ...c.appearance, artSrc: "/art/cats/mapleshade-blood.jpg" },
+      }));
       next = log(next, "death", "A warrior has been found dead. Appledusk lies still in the den — Mapleshade watches from the shadows.");
       next = { ...next, pendingCutscene: "mapleshade_appledusk" };
     }

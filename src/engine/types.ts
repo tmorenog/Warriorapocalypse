@@ -105,6 +105,10 @@ export interface Cat {
   cosmetics: string[]; // equipped cosmetic ids
   controllerId: string | null; // player id in multiplayer, null = NPC
   causeOfDeath?: string;
+  // While set, this cat wears a temporary "bloodied" portrait through the given
+  // day; it reverts to its normal art once the day passes (e.g. Mapleshade right
+  // after she settles her old score with Appledusk).
+  bloodyUntilDay?: number | null;
 }
 
 export interface InventoryItem {

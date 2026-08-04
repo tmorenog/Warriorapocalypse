@@ -57,11 +57,15 @@ interface DenErase {
   bot: number;
   wx0?: number; // white-removal zone x (defaults to x0/x1); can be wider/deeper
   wx1?: number;
+  // Paint the old cat out with a colour sampled from the perch itself (e.g. the
+  // rock's grey), for a cat that sits ON a coloured perch rather than against the
+  // plain taupe wall. Rect + sample point are image fractions.
+  fill?: { x0: number; x1: number; top: number; bot: number; sx: number; sy: number };
 }
 const DEN_ERASE: Record<number, DenErase> = {
   0: { x0: 0.35, x1: 0.575, top: 0.31, perchY: 0.52, bot: 0.68 }, // centre log
-  1: { x0: 0.13, x1: 0.335, top: 0.41, perchY: 0.57, bot: 0.83, wx0: 0.0, wx1: 0.35 }, // stump (taupe off the torch)
-  2: { x0: 0.66, x1: 0.9, top: 0.52, perchY: 0.52, bot: 0.72 }, // rock (all on-perch)
+  1: { x0: 0.02, x1: 0.335, top: 0.435, perchY: 0.57, bot: 0.83, wx0: 0.0, wx1: 0.35 }, // stump — taupe reaches left over the old raised tail, staying just below the torch
+  2: { x0: 0.66, x1: 0.9, top: 0.44, perchY: 0.55, bot: 0.72, fill: { x0: 0.685, x1: 0.875, top: 0.55, bot: 0.685, sx: 0.70, sy: 0.605 } }, // rock — taupe clears the head above; rock-grey fill paints out the curled cat on the rock
   3: { x0: 0.565, x1: 0.7, top: 0.66, perchY: 0.79, bot: 1.0, wx0: 0.53, wx1: 0.76 }, // barrel
   4: { x0: 0.71, x1: 0.88, top: 0.83, perchY: 0.83, bot: 1.0 }, // ground (white-remove)
 };
@@ -164,6 +168,16 @@ function recolorDen(img: HTMLImageElement, cats: (DenCatLook | undefined)[]): st
       if (MID > TOP && X1 > X0) {
         ctx.fillStyle = bgCss;
         ctx.fillRect(X0, TOP, X1 - X0, MID - TOP);
+      }
+      // 3) For a cat sitting ON a coloured perch (the rock), paint it out with the
+      //    perch's own colour so the perch reads as empty under the new art.
+      if (r && r.fill) {
+        const f = r.fill;
+        const sp = ctx.getImageData(Math.floor(f.sx * W), Math.floor(f.sy * H), 1, 1).data;
+        ctx.fillStyle = `rgb(${sp[0]},${sp[1]},${sp[2]})`;
+        const fx0 = Math.floor(f.x0 * W);
+        const fy0 = Math.floor(f.top * H);
+        ctx.fillRect(fx0, fy0, Math.ceil(f.x1 * W) - fx0, Math.ceil(f.bot * H) - fy0);
       }
       return;
     }
