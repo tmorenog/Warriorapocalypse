@@ -11,6 +11,7 @@ import { estimateMission } from "@/engine/missions";
 import { kitMissionAllowed } from "@/engine/multiplayer";
 import { computeUpgradeEffects } from "@/engine/gameState";
 import { Scene } from "@/components/art/Scene";
+import { HuntCutscene } from "./HuntCutscene";
 import { CatPortrait } from "@/components/art/CatPortrait";
 import { CatSprite } from "@/components/art/CatSprite";
 import { MeterBar } from "@/components/ui/MeterBar";
@@ -62,8 +63,8 @@ export function DayScreen({ ctx }: { ctx: GameController }) {
             denCats={
               denSpots
                 ? denSpots.map((c) =>
-                    !c
-                      ? undefined
+                    !c || c.appearance.artSrc
+                      ? undefined // finished-art cats (Mapleshade) draw their own art on the spot
                       : c.alive
                         ? { fur: c.appearance.furColor, eye: c.appearance.eyeColor, pattern: c.appearance.furPattern, marking: c.appearance.markingColor }
                         : { fur: "#9a9a9a", eye: "#6b6b6b" },
@@ -316,25 +317,44 @@ function DenClan({
         const s = DEN_SPOTS[i];
         const away = c.onMission || c.isEnemyTurned;
         return (
-          <button
-            key={c.id}
-            onClick={() => onView(c.id)}
-            aria-label={`View ${c.name}`}
-            style={{ left: `${s.left}%`, top: `${s.top}%`, width: `${s.width}%`, height: `${s.height}%` }}
-            className={`group absolute rounded-xl transition ${!c.alive ? "opacity-50" : ""} ${
-              c.id === selectedCatId ? "ring-2 ring-ember/80" : "hover:ring-2 hover:ring-parchment/40"
-            }`}
-          >
-            <span className="pointer-events-none absolute left-1/2 top-full flex -translate-x-1/2 flex-col items-center gap-0.5">
-              <span className={`whitespace-nowrap rounded bg-black/65 px-1 text-[9px] font-semibold text-parchment transition ${c.id === selectedCatId ? "opacity-100" : "opacity-0 group-hover:opacity-100"}`}>
-                {c.name}
-                {!c.alive ? " ✝" : away ? " (away)" : ""}
+          <React.Fragment key={c.id}>
+            {/* Cats with finished art (Mapleshade) show that drawing on their
+                spot, instead of the plain den cat. */}
+            {c.appearance.artSrc && (
+              <div
+                className="pointer-events-none absolute"
+                style={{
+                  left: `${s.left + s.width / 2}%`,
+                  top: `${s.top + s.height - 28}%`,
+                  width: "25%",
+                  height: "28%",
+                  transform: "translateX(-50%)",
+                  zIndex: 30 + Math.round(s.top),
+                  opacity: c.alive ? 1 : 0.5,
+                }}
+              >
+                <CatSprite role={c.role} appearance={c.appearance} fill dimmed={!c.alive} />
+              </div>
+            )}
+            <button
+              onClick={() => onView(c.id)}
+              aria-label={`View ${c.name}`}
+              style={{ left: `${s.left}%`, top: `${s.top}%`, width: `${s.width}%`, height: `${s.height}%` }}
+              className={`group absolute rounded-xl transition ${!c.alive ? "opacity-50" : ""} ${
+                c.id === selectedCatId ? "ring-2 ring-ember/80" : "hover:ring-2 hover:ring-parchment/40"
+              }`}
+            >
+              <span className="pointer-events-none absolute left-1/2 top-full flex -translate-x-1/2 flex-col items-center gap-0.5">
+                <span className={`whitespace-nowrap rounded bg-black/65 px-1 text-[9px] font-semibold text-parchment transition ${c.id === selectedCatId ? "opacity-100" : "opacity-0 group-hover:opacity-100"}`}>
+                  {c.name}
+                  {!c.alive ? " ✝" : away ? " (away)" : ""}
+                </span>
+                <span className="h-1 w-8 overflow-hidden rounded-full bg-black/55">
+                  <span className="block h-full rounded-full" style={{ width: `${c.meters.health}%`, background: c.meters.health > 45 ? "#8bab6a" : "#c15a5a" }} />
+                </span>
               </span>
-              <span className="h-1 w-8 overflow-hidden rounded-full bg-black/55">
-                <span className="block h-full rounded-full" style={{ width: `${c.meters.health}%`, background: c.meters.health > 45 ? "#8bab6a" : "#c15a5a" }} />
-              </span>
-            </span>
-          </button>
+            </button>
+          </React.Fragment>
         );
       })}
     </div>
@@ -531,14 +551,32 @@ function MissionsInline({ ctx }: { ctx: GameController }) {
   const toggle = (id: string) =>
     setSelectedCats((p) => (p.includes(id) ? p.filter((x) => x !== id) : [...p, id]));
 
-  const confirm = () => {
-    if (chosen.length === 0 || !kitOk) return;
+  const [showHunt, setShowHunt] = useState(false);
+
+  const beginMission = () => {
     ctx.startMission(missionId, selectedCats);
     setSelectedCats([]);
+  };
+  const confirm = () => {
+    if (chosen.length === 0 || !kitOk) return;
+    // Hunting plays Aina's hunt animation first, then the mission runs.
+    if (missionId === "hunt_food") {
+      setShowHunt(true);
+      return;
+    }
+    beginMission();
   };
 
   return (
     <div className="space-y-3">
+      {showHunt && (
+        <HuntCutscene
+          onDone={() => {
+            setShowHunt(false);
+            beginMission();
+          }}
+        />
+      )}
       {run.activeMissions.length > 0 && (
         <div className="rounded-lg bg-black/25 p-2 text-xs">
           <div className="mb-1 font-semibold text-fern">Active Missions</div>
