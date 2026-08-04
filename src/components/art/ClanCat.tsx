@@ -83,9 +83,37 @@ function patternZone(
 const cache = new Map<string, string>();
 const PROC_MAX = 720; // processing resolution — higher = smoother, less pixelated
 
-// Finished art (like Mapleshade) comes on a white page. Flood the outer white to
-// transparent so only the cat shows — enclosed whites (belly, paws) stay because
-// the flood can't cross her black outlines.
+// Separable dilation of a binary mask by radius r (max over a (2r+1) window).
+function dilateMask(src: Uint8Array, w: number, h: number, r: number): Uint8Array {
+  const tmp = new Uint8Array(w * h);
+  const out = new Uint8Array(w * h);
+  for (let y = 0; y < h; y++) {
+    for (let x = 0; x < w; x++) {
+      let v = 0;
+      for (let dx = -r; dx <= r; dx++) {
+        const nx = x + dx;
+        if (nx >= 0 && nx < w && src[y * w + nx]) { v = 1; break; }
+      }
+      tmp[y * w + x] = v;
+    }
+  }
+  for (let y = 0; y < h; y++) {
+    for (let x = 0; x < w; x++) {
+      let v = 0;
+      for (let dy = -r; dy <= r; dy++) {
+        const ny = y + dy;
+        if (ny >= 0 && ny < h && tmp[ny * w + x]) { v = 1; break; }
+      }
+      out[y * w + x] = v;
+    }
+  }
+  return out;
+}
+
+// Finished art comes on a white page. Cut the page out by SEALING the cat's
+// silhouette (dilate its ink to close outline gaps), flooding the exterior
+// background from the border, then tightening back — so a mostly-white cat
+// (like Blackstar) keeps its white body instead of it leaking away.
 const artCache = new Map<string, string>();
 function keyOutWhite(img: HTMLImageElement): string {
   const scale = Math.min(1, 900 / Math.max(img.naturalWidth, img.naturalHeight));
@@ -99,19 +127,23 @@ function keyOutWhite(img: HTMLImageElement): string {
   const id = ctx.getImageData(0, 0, w, h);
   const d = id.data;
   const n = w * h;
-  const isBg = (i: number) => {
-    const r = d[i * 4];
-    const g = d[i * 4 + 1];
-    const b = d[i * 4 + 2];
-    return Math.min(r, g, b) > 206;
-  };
-  const bg = new Uint8Array(n);
+
+  // Content = anything that isn't the near-white page (ink, markings, eyes, fur).
+  const content = new Uint8Array(n);
+  for (let i = 0; i < n; i++) {
+    if (Math.min(d[i * 4], d[i * 4 + 1], d[i * 4 + 2]) < 208) content[i] = 1;
+  }
+  const K = Math.max(6, Math.round(Math.max(w, h) * 0.02));
+  const sealed = dilateMask(content, w, h, K);
+
+  // Flood the exterior from the border, blocked by the sealed silhouette.
+  const ext = new Uint8Array(n);
   const stack: number[] = [];
   const push = (x: number, y: number) => {
     if (x < 0 || y < 0 || x >= w || y >= h) return;
     const i = y * w + x;
-    if (bg[i] || !isBg(i)) return;
-    bg[i] = 1;
+    if (ext[i] || sealed[i]) return;
+    ext[i] = 1;
     stack.push(i);
   };
   for (let x = 0; x < w; x++) {
@@ -131,7 +163,9 @@ function keyOutWhite(img: HTMLImageElement): string {
     push(x, y - 1);
     push(x, y + 1);
   }
-  for (let i = 0; i < n; i++) if (bg[i]) d[i * 4 + 3] = 0;
+  // Tighten the exterior back to the true silhouette edge (undo the seal margin).
+  const extTight = dilateMask(ext, w, h, K);
+  for (let i = 0; i < n; i++) if (extTight[i]) d[i * 4 + 3] = 0;
   ctx.putImageData(id, 0, 0);
 
   // Crop to the visible (non-transparent) pixels so the cat fills the frame.

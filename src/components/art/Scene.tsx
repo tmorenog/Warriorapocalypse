@@ -44,6 +44,26 @@ export const DEN_CAT_BOXES: [number, number, number, number][] = [
   [0.74, 0.85, 0.84, 0.97], // tiny ground cat
 ];
 
+// To remove an old drawn cat cleanly while keeping the log: above the perch the
+// area is plain taupe, so paint it out fully (removes the cat's head/ears/tail
+// and its outline); on the perch, remove only the white fill (keep the log's
+// colour), and the new cat's art covers the rest. {x0,x1,top,perchY,bot} in
+// image fractions. perchY == top means "all on-perch" (e.g. the rock).
+interface DenErase {
+  x0: number;
+  x1: number;
+  top: number;
+  perchY: number;
+  bot: number;
+}
+const DEN_ERASE: Record<number, DenErase> = {
+  0: { x0: 0.35, x1: 0.575, top: 0.31, perchY: 0.52, bot: 0.6 }, // centre log
+  1: { x0: 0.0, x1: 0.335, top: 0.41, perchY: 0.57, bot: 0.7 }, // stump
+  2: { x0: 0.66, x1: 0.9, top: 0.52, perchY: 0.52, bot: 0.7 }, // rock (all on-perch)
+  3: { x0: 0.565, x1: 0.69, top: 0.66, perchY: 0.74, bot: 0.9 }, // barrel (x kept off the rock)
+  4: { x0: 0.71, x1: 0.87, top: 0.83, perchY: 0.9, bot: 0.97 }, // ground
+};
+
 
 function hex2rgb(hex: string): { r: number; g: number; b: number } {
   const h = hex.replace("#", "");
@@ -112,25 +132,33 @@ function recolorDen(img: HTMLImageElement, cats: (DenCatLook | undefined)[]): st
     // Erase: paint the whole spot (drawn cat + its perch) out with the background
     // so a finished-art cat can stand there with nothing peeking behind.
     if (look.erase) {
-      // Remove only the drawn cat (its white pixels), keeping the coloured perch
-      // (brown log / green moss / blue barrel / grey rock). Extend down a little
-      // to catch paws sitting inside a perch. The new cat's art covers the rest.
-      const ex0 = Math.max(0, Math.floor((box[0] - 0.02) * W));
-      const ey0 = Math.max(0, Math.floor((box[1] - 0.02) * H));
-      const ex1 = Math.min(W, Math.ceil((box[2] + 0.02) * W));
-      const ey1 = Math.min(H, Math.ceil((box[3] + 0.12) * H));
-      const ew = ex1 - ex0;
-      const eh = ey1 - ey0;
-      const eid = ctx.getImageData(ex0, ey0, ew, eh);
-      const ed = eid.data;
-      for (let k = 0; k < ew * eh; k++) {
-        if (Math.min(ed[k * 4], ed[k * 4 + 1], ed[k * 4 + 2]) > 198) {
-          ed[k * 4] = bgPix[0];
-          ed[k * 4 + 1] = bgPix[1];
-          ed[k * 4 + 2] = bgPix[2];
-        }
+      const r = DEN_ERASE[i];
+      const X0 = Math.max(0, Math.floor((r ? r.x0 : box[0]) * W));
+      const X1 = Math.min(W, Math.ceil((r ? r.x1 : box[2]) * W));
+      const TOP = Math.max(0, Math.floor((r ? r.top : box[1]) * H));
+      const MID = Math.max(0, Math.floor((r ? r.perchY : box[1]) * H));
+      const BOT = Math.min(H, Math.ceil((r ? r.bot : box[3] + 0.12) * H));
+      // Above the perch (plain taupe): paint the whole strip out — removes the
+      // old cat's upper body AND its outline.
+      if (MID > TOP && X1 > X0) {
+        ctx.fillStyle = bgCss;
+        ctx.fillRect(X0, TOP, X1 - X0, MID - TOP);
       }
-      ctx.putImageData(eid, ex0, ey0);
+      // On the perch: remove only near-white (the cat's fill), keep the log's
+      // colour; the new cat's art covers the outline underneath.
+      if (BOT > MID && X1 > X0) {
+        const eid = ctx.getImageData(X0, MID, X1 - X0, BOT - MID);
+        const ed = eid.data;
+        const cnt = (X1 - X0) * (BOT - MID);
+        for (let k = 0; k < cnt; k++) {
+          if (Math.min(ed[k * 4], ed[k * 4 + 1], ed[k * 4 + 2]) > 198) {
+            ed[k * 4] = bgPix[0];
+            ed[k * 4 + 1] = bgPix[1];
+            ed[k * 4 + 2] = bgPix[2];
+          }
+        }
+        ctx.putImageData(eid, X0, MID);
+      }
       return;
     }
 

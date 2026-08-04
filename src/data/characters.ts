@@ -219,7 +219,7 @@ const SEEDS: Seed[] = [
     passive: ["night_prowler", "Night Prowler", "Improves success on nighttime missions."],
     battle: ["ambush_command", "Ambush Command", "Strikes and lowers the target's defense for allies."],
     description: "A big white tom with jet-black paws, stern and hard to read.",
-    appearance: { furColor: "#e8e8e4", furPattern: "solid", eyeColor: "#c8a13a", bodyType: "large" },
+    appearance: { furColor: "#e8e8e4", furPattern: "solid", eyeColor: "#c8a13a", bodyType: "large", artSrc: "/art/cats/blackstar.jpg" },
   },
   {
     id: "tigerstar",
