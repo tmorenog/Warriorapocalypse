@@ -83,6 +83,59 @@ function patternZone(
 const cache = new Map<string, string>();
 const PROC_MAX = 720; // processing resolution — higher = smoother, less pixelated
 
+// Finished art (like Mapleshade) comes on a white page. Flood the outer white to
+// transparent so only the cat shows — enclosed whites (belly, paws) stay because
+// the flood can't cross her black outlines.
+const artCache = new Map<string, string>();
+function keyOutWhite(img: HTMLImageElement): string {
+  const scale = Math.min(1, 900 / Math.max(img.naturalWidth, img.naturalHeight));
+  const w = Math.max(1, Math.round(img.naturalWidth * scale));
+  const h = Math.max(1, Math.round(img.naturalHeight * scale));
+  const cv = document.createElement("canvas");
+  cv.width = w;
+  cv.height = h;
+  const ctx = cv.getContext("2d")!;
+  ctx.drawImage(img, 0, 0, w, h);
+  const id = ctx.getImageData(0, 0, w, h);
+  const d = id.data;
+  const n = w * h;
+  const isBg = (i: number) => {
+    const r = d[i * 4];
+    const g = d[i * 4 + 1];
+    const b = d[i * 4 + 2];
+    return Math.min(r, g, b) > 206;
+  };
+  const bg = new Uint8Array(n);
+  const stack: number[] = [];
+  const push = (x: number, y: number) => {
+    if (x < 0 || y < 0 || x >= w || y >= h) return;
+    const i = y * w + x;
+    if (bg[i] || !isBg(i)) return;
+    bg[i] = 1;
+    stack.push(i);
+  };
+  for (let x = 0; x < w; x++) {
+    push(x, 0);
+    push(x, h - 1);
+  }
+  for (let y = 0; y < h; y++) {
+    push(0, y);
+    push(w - 1, y);
+  }
+  while (stack.length) {
+    const i = stack.pop()!;
+    const y = (i / w) | 0;
+    const x = i - y * w;
+    push(x - 1, y);
+    push(x + 1, y);
+    push(x, y - 1);
+    push(x, y + 1);
+  }
+  for (let i = 0; i < n; i++) if (bg[i]) d[i * 4 + 3] = 0;
+  ctx.putImageData(id, 0, 0);
+  return cv.toDataURL("image/png");
+}
+
 // Recolour Aina's white line-art, keeping her soft pencil lines:
 //  • fill the body via a morphological close (dilate → flood → erode) so loose
 //    sketches fill solidly without eating thin limbs
@@ -330,6 +383,36 @@ export function ClanCat({ role, appearance, size = 88, fill, dimmed, turned, fac
   const key = `${src}|${color}|${eyeColor}|${pattern}|${marking}`;
   const [url, setUrl] = useState<string | null>(() => cache.get(key) ?? null);
 
+  // Cut the white page out of finished art (e.g. Mapleshade) so no white box shows.
+  const artSrc = appearance.artSrc;
+  const [artUrl, setArtUrl] = useState<string | null>(() => (artSrc ? artCache.get(artSrc) ?? null : null));
+  useEffect(() => {
+    if (!artSrc) return;
+    if (artCache.has(artSrc)) {
+      setArtUrl(artCache.get(artSrc)!);
+      return;
+    }
+    let cancelled = false;
+    const img = new window.Image();
+    img.onload = () => {
+      if (cancelled) return;
+      try {
+        const u = keyOutWhite(img);
+        artCache.set(artSrc, u);
+        setArtUrl(u);
+      } catch {
+        setArtUrl(artSrc);
+      }
+    };
+    img.onerror = () => {
+      if (!cancelled) setArtUrl(artSrc);
+    };
+    img.src = artSrc;
+    return () => {
+      cancelled = true;
+    };
+  }, [artSrc]);
+
   useEffect(() => {
     if (cache.has(key)) {
       setUrl(cache.get(key)!);
@@ -357,8 +440,8 @@ export function ClanCat({ role, appearance, size = 88, fill, dimmed, turned, fac
   }, [key, src, color, eyeColor, pattern, marking]);
 
   // A character with finished, ready-coloured art (e.g. Mapleshade) uses it as-is
-  // instead of the recoloured template.
-  if (appearance.artSrc) {
+  // (background cut out) instead of the recoloured template.
+  if (artSrc) {
     return (
       <div
         className={className}
@@ -366,15 +449,16 @@ export function ClanCat({ role, appearance, size = 88, fill, dimmed, turned, fac
       >
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
-          src={appearance.artSrc}
+          src={artUrl ?? artSrc}
           alt="cat"
           style={{
             width: "100%",
             height: "100%",
             objectFit: "contain",
             objectPosition: "bottom",
-            opacity: dimmed ? 0.4 : 1,
+            opacity: artUrl ? (dimmed ? 0.4 : 1) : 0,
             transform: facing === "left" ? "scaleX(-1)" : undefined,
+            transition: "opacity 0.2s",
           }}
         />
       </div>
