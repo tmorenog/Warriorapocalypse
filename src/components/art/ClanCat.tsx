@@ -356,6 +356,31 @@ export function ClanCat({ role, appearance, size = 88, fill, dimmed, turned, fac
     };
   }, [key, src, color, eyeColor, pattern, marking]);
 
+  // A character with finished, ready-coloured art (e.g. Mapleshade) uses it as-is
+  // instead of the recoloured template.
+  if (appearance.artSrc) {
+    return (
+      <div
+        className={className}
+        style={fill ? { width: "100%", height: "100%", lineHeight: 0 } : { width: size, height: size, display: "inline-block", lineHeight: 0 }}
+      >
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src={appearance.artSrc}
+          alt="cat"
+          style={{
+            width: "100%",
+            height: "100%",
+            objectFit: "contain",
+            objectPosition: "bottom",
+            opacity: dimmed ? 0.4 : 1,
+            transform: facing === "left" ? "scaleX(-1)" : undefined,
+          }}
+        />
+      </div>
+    );
+  }
+
   return (
     <div
       className={className}

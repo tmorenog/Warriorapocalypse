@@ -2,6 +2,7 @@ import React from "react";
 import type { GameController } from "@/game/useGameController";
 import { Scene } from "@/components/art/Scene";
 import { CatSprite } from "@/components/art/CatSprite";
+import { ArtGallery } from "./ArtGallery";
 import { APP_VERSION } from "@/version";
 
 const MENU: { key: string; label: string; screen?: string; action?: string; primary?: boolean }[] = [
@@ -66,6 +67,8 @@ export function TitleScreen({ ctx }: { ctx: GameController }) {
           );
         })}
       </div>
+
+      <ArtGallery />
 
       <p className="mt-6 rounded-lg border border-fern/20 bg-black/30 p-3 text-center text-[11px] leading-relaxed text-parchment/60">
         <strong>Disclaimer:</strong> This is an unofficial, fan-created game inspired by the world of

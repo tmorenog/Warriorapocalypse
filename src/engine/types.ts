@@ -62,6 +62,7 @@ export interface Appearance {
   earShape: string;
   tailStyle: string;
   markingColor?: string; // secondary colour for bicolor/marked patterns (e.g. white)
+  artSrc?: string; // a finished, ready-coloured portrait to use as-is instead of the recoloured template
 }
 
 export interface AbilityDef {
