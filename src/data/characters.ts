@@ -111,7 +111,7 @@ const SEEDS: Seed[] = [
     passive: ["gentle_hands", "Gentle Hands", "Wound healing restores extra health."],
     battle: ["soothing_herbs", "Soothing Herbs", "Restores a large amount of health to one ally."],
     description: "A dark gray she-cat with a lame leg and a bright, devoted heart for healing.",
-    appearance: { furColor: "#4f5158", furPattern: "solid", eyeColor: "#4d7fb0", scars: "leg" },
+    appearance: { furColor: "#4f5158", furPattern: "solid", eyeColor: "#4d7fb0", scars: "leg", artSrc: "/art/cats/cinderpelt.jpg" },
   },
   {
     id: "leafpool",
