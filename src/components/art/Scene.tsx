@@ -58,10 +58,10 @@ interface DenErase {
 }
 const DEN_ERASE: Record<number, DenErase> = {
   0: { x0: 0.35, x1: 0.575, top: 0.31, perchY: 0.52, bot: 0.6 }, // centre log
-  1: { x0: 0.0, x1: 0.335, top: 0.41, perchY: 0.57, bot: 0.7 }, // stump
+  1: { x0: 0.0, x1: 0.335, top: 0.41, perchY: 0.57, bot: 0.72 }, // stump
   2: { x0: 0.66, x1: 0.9, top: 0.52, perchY: 0.52, bot: 0.7 }, // rock (all on-perch)
-  3: { x0: 0.565, x1: 0.69, top: 0.66, perchY: 0.74, bot: 0.9 }, // barrel (x kept off the rock)
-  4: { x0: 0.71, x1: 0.87, top: 0.83, perchY: 0.9, bot: 0.97 }, // ground
+  3: { x0: 0.565, x1: 0.7, top: 0.66, perchY: 0.9, bot: 0.9 }, // barrel (all taupe, off the rock)
+  4: { x0: 0.71, x1: 0.87, top: 0.83, perchY: 0.97, bot: 0.97 }, // ground (all taupe)
 };
 
 
@@ -144,8 +144,9 @@ function recolorDen(img: HTMLImageElement, cats: (DenCatLook | undefined)[]): st
         ctx.fillStyle = bgCss;
         ctx.fillRect(X0, TOP, X1 - X0, MID - TOP);
       }
-      // On the perch: remove only near-white (the cat's fill), keep the log's
-      // colour; the new cat's art covers the outline underneath.
+      // On the perch: remove only the old cat's near-white fill AND its dark
+      // outline pixels that are thin (the cat's ink) — but keep the perch. We do
+      // this by replacing near-white with the perch colour sampled just below.
       if (BOT > MID && X1 > X0) {
         const eid = ctx.getImageData(X0, MID, X1 - X0, BOT - MID);
         const ed = eid.data;
