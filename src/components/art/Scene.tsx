@@ -44,6 +44,16 @@ export const DEN_CAT_BOXES: [number, number, number, number][] = [
   [0.74, 0.85, 0.84, 0.97], // tiny ground cat
 ];
 
+// When a finished-art cat stands on a spot, erase the whole drawn cat AND its
+// perch (paint out with the background) so nothing peeks. Per spot index.
+const DEN_ERASE_BOXES: Record<number, [number, number, number, number]> = {
+  0: [0.34, 0.32, 0.58, 0.9], // centre log
+  1: [0.0, 0.44, 0.35, 0.9], // left stump
+  2: [0.66, 0.53, 0.9, 0.72], // right rock
+  3: [0.55, 0.7, 0.77, 0.99], // barrel
+  4: [0.71, 0.83, 0.87, 1.0], // ground
+};
+
 function hex2rgb(hex: string): { r: number; g: number; b: number } {
   const h = hex.replace("#", "");
   return { r: parseInt(h.slice(0, 2), 16), g: parseInt(h.slice(2, 4), 16), b: parseInt(h.slice(4, 6), 16) };
@@ -111,12 +121,13 @@ function recolorDen(img: HTMLImageElement, cats: (DenCatLook | undefined)[]): st
     // Erase: paint the whole spot (drawn cat + its perch) out with the background
     // so a finished-art cat can stand there with nothing peeking behind.
     if (look.erase) {
-      // Stay below the neighbouring rock (don't extend upward) and reach down to
-      // cover the barrel; on the flat taupe background this fill is invisible.
-      const ex0 = Math.max(0, (box[0] - 0.015) * W);
-      const ey0 = Math.max(0, (box[1] + 0.01) * H);
-      const ex1 = Math.min(W, (box[2] + 0.015) * W);
-      const ey1 = Math.min(H, (box[3] + 0.13) * H);
+      // Paint out the drawn cat + its perch with the background. Uses a per-spot
+      // region so it covers the whole perch without touching neighbours.
+      const eb = DEN_ERASE_BOXES[i] ?? box;
+      const ex0 = Math.max(0, eb[0] * W);
+      const ey0 = Math.max(0, eb[1] * H);
+      const ex1 = Math.min(W, eb[2] * W);
+      const ey1 = Math.min(H, eb[3] * H);
       ctx.fillStyle = bgCss;
       ctx.fillRect(ex0, ey0, ex1 - ex0, ey1 - ey0);
       return;

@@ -75,7 +75,7 @@ const SEEDS: Seed[] = [
     passive: ["loyal_shoulder", "Loyal Shoulder", "The cat he guards takes less injury on missions."],
     battle: ["shoulder_check", "Shoulder Check", "Redirects an ally's incoming hit onto himself."],
     description: "A broad gray tom with a long stripe down his back, loyal to the last whisker.",
-    appearance: { furColor: "#8a8f96", furPattern: "stripe", eyeColor: "#c8a13a", bodyType: "large" },
+    appearance: { furColor: "#8a8f96", furPattern: "stripe", eyeColor: "#c8a13a", bodyType: "large", artSrc: "/art/cats/graystripe.jpg" },
   },
   {
     id: "sandstorm",

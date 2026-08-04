@@ -277,6 +277,16 @@ const DEN_SPOTS = [
   { left: 73, top: 84, width: 10, height: 13 }, // tiny ground cat
 ];
 
+// Placement of a finished-art cat on each den spot: centre x, feet line, and
+// size (all % of the scene). Tuned so each stands on its perch.
+const DEN_ART_PLACEMENT: Record<number, { cx: number; feet: number; size: number }> = {
+  0: { cx: 46, feet: 62, size: 30 }, // centre log
+  1: { cx: 20, feet: 64, size: 28 }, // left stump
+  2: { cx: 78, feet: 66, size: 26 }, // right rock
+  3: { cx: 60, feet: 91, size: 28 }, // barrel
+  4: { cx: 79, feet: 97, size: 18 }, // ground
+};
+
 // Seat cats on the drawing BY ROLE, not by pick order, so the leader takes the
 // centre log, the deputy the stump, the elder curls on the rock, a warrior sits
 // in the barrel, and the kit is on the ground. Leftover cats (e.g. a second
@@ -322,22 +332,27 @@ function DenClan({
           <React.Fragment key={c.id}>
             {/* Cats with finished art (Mapleshade) show that drawing on their
                 spot, instead of the plain den cat. */}
-            {c.appearance.artSrc && (
-              <div
-                className="pointer-events-none absolute"
-                style={{
-                  left: `${s.left + s.width / 2 - 7}%`,
-                  top: `${99 - 31}%`,
-                  width: "28%",
-                  height: "31%",
-                  transform: "translateX(-50%)",
-                  zIndex: 30 + Math.round(s.top),
-                  opacity: c.alive ? 1 : 0.5,
-                }}
-              >
-                <CatSprite role={c.role} appearance={c.appearance} fill dimmed={!c.alive} />
-              </div>
-            )}
+            {c.appearance.artSrc && (() => {
+              // Where the finished-art cat stands on its spot: centre x, feet line,
+              // and size — tuned per spot so it sits on the perch, not off-screen.
+              const place = DEN_ART_PLACEMENT[i] ?? { cx: s.left + s.width / 2, feet: s.top + s.height, size: 30 };
+              return (
+                <div
+                  className="pointer-events-none absolute"
+                  style={{
+                    left: `${place.cx}%`,
+                    top: `${place.feet - place.size}%`,
+                    width: `${place.size}%`,
+                    height: `${place.size}%`,
+                    transform: "translateX(-50%)",
+                    zIndex: 30 + Math.round(s.top),
+                    opacity: c.alive ? 1 : 0.5,
+                  }}
+                >
+                  <CatSprite role={c.role} appearance={c.appearance} fill dimmed={!c.alive} />
+                </div>
+              );
+            })()}
             <button
               onClick={() => onView(c.id)}
               aria-label={`View ${c.name}`}
