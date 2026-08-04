@@ -122,8 +122,8 @@ const SEEDS: Seed[] = [
     attack: 9, defense: 11, hunting: 9, medicine: 17, stealth: 13, speed: 11,
     passive: ["quiet_intuition", "Quiet Intuition", "Better at spotting contaminated food and water."],
     battle: ["healing_touch", "Healing Touch", "Heals an ally and cleanses one status effect."],
-    description: "A light brown tabby she-cat with amber eyes and a deep bond to the world around her.",
-    appearance: { furColor: "#b58a52", furPattern: "tabby", eyeColor: "#c8901f" },
+    description: "A soft brown tabby she-cat with bright green eyes and a deep bond to the world around her.",
+    appearance: { furColor: "#6f5646", furPattern: "tabby", eyeColor: "#3f9e46", artSrc: "/art/cats/leafpool.jpg" },
   },
   {
     id: "squirrelflight",
