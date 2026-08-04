@@ -19,10 +19,13 @@ interface SceneProps {
 }
 
 export interface DenCatLook {
-  fur: string;
+  fur?: string;
   eye?: string;
   pattern?: string;
   marking?: string;
+  // Erase this spot's drawn cat (paint it out with the den background) instead of
+  // tinting it — used where a finished-art cat (Mapleshade) draws her own art.
+  erase?: boolean;
 }
 
 // Aina's exact den drawing, used as the den background. The den scene is locked
@@ -96,10 +99,30 @@ function recolorDen(img: HTMLImageElement, cats: (DenCatLook | undefined)[]): st
   const ctx = cv.getContext("2d")!;
   ctx.drawImage(img, 0, 0);
 
+  // Sample the empty background (top-centre of the drawing) so an erased spot
+  // blends in seamlessly.
+  const bgPix = ctx.getImageData(Math.floor(W * 0.5), Math.floor(H * 0.22), 1, 1).data;
+  const bgCss = `rgb(${bgPix[0]},${bgPix[1]},${bgPix[2]})`;
+
   DEN_CAT_BOXES.forEach((box, i) => {
     const look = cats[i];
     if (!look) return;
-    const fur = hex2rgb(look.fur);
+
+    // Erase: paint the whole spot (drawn cat + its perch) out with the background
+    // so a finished-art cat can stand there with nothing peeking behind.
+    if (look.erase) {
+      // Stay below the neighbouring rock (don't extend upward) and reach down to
+      // cover the barrel; on the flat taupe background this fill is invisible.
+      const ex0 = Math.max(0, (box[0] - 0.015) * W);
+      const ey0 = Math.max(0, (box[1] + 0.01) * H);
+      const ex1 = Math.min(W, (box[2] + 0.015) * W);
+      const ey1 = Math.min(H, (box[3] + 0.13) * H);
+      ctx.fillStyle = bgCss;
+      ctx.fillRect(ex0, ey0, ex1 - ex0, ey1 - ey0);
+      return;
+    }
+
+    const fur = hex2rgb(look.fur || "#cccccc");
     const eye = hex2rgb(look.eye || "#4d7fb0");
     const mark = hex2rgb(look.marking || "#efeee9");
     const pattern = look.pattern || "solid";

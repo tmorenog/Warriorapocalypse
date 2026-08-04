@@ -63,11 +63,13 @@ export function DayScreen({ ctx }: { ctx: GameController }) {
             denCats={
               denSpots
                 ? denSpots.map((c) =>
-                    !c || c.appearance.artSrc
-                      ? undefined // finished-art cats (Mapleshade) draw their own art on the spot
-                      : c.alive
-                        ? { fur: c.appearance.furColor, eye: c.appearance.eyeColor, pattern: c.appearance.furPattern, marking: c.appearance.markingColor }
-                        : { fur: "#9a9a9a", eye: "#6b6b6b" },
+                    !c
+                      ? undefined
+                      : c.appearance.artSrc
+                        ? { erase: true } // erase the drawn cat; Mapleshade draws her own art here
+                        : c.alive
+                          ? { fur: c.appearance.furColor, eye: c.appearance.eyeColor, pattern: c.appearance.furPattern, marking: c.appearance.markingColor }
+                          : { fur: "#9a9a9a", eye: "#6b6b6b" },
                   )
                 : undefined
             }
@@ -324,10 +326,10 @@ function DenClan({
               <div
                 className="pointer-events-none absolute"
                 style={{
-                  left: `${s.left + s.width / 2}%`,
-                  top: `${s.top + s.height - 28}%`,
-                  width: "25%",
-                  height: "28%",
+                  left: `${s.left + s.width / 2 - 7}%`,
+                  top: `${99 - 31}%`,
+                  width: "28%",
+                  height: "31%",
                   transform: "translateX(-50%)",
                   zIndex: 30 + Math.round(s.top),
                   opacity: c.alive ? 1 : 0.5,
@@ -571,9 +573,12 @@ function MissionsInline({ ctx }: { ctx: GameController }) {
     <div className="space-y-3">
       {showHunt && (
         <HuntCutscene
-          onDone={() => {
+          onCatch={() => {
             setShowHunt(false);
-            beginMission();
+            beginMission(); // caught it — the hunt goes ahead
+          }}
+          onMiss={() => {
+            setShowHunt(false); // missed — the cats stay; try again
           }}
         />
       )}
