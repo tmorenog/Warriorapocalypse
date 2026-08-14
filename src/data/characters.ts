@@ -231,7 +231,7 @@ const SEEDS: Seed[] = [
     passive: ["fearsome_presence", "Fearsome Presence", "Enemies are more likely to flee a battle he's in."],
     battle: ["killing_blow", "Killing Blow", "A brutal strike with a high chance to critically hit."],
     description: "A massive dark brown tabby tom with long claws and ambition burning in his amber eyes.",
-    appearance: { furColor: "#5a3f24", furPattern: "tabby", eyeColor: "#c88a1f", scars: "muzzle", bodyType: "large" },
+    appearance: { furColor: "#493425", furPattern: "tabby", eyeColor: "#f2b100", scars: "muzzle", bodyType: "large", artSrc: "/art/cats/tigerstar.jpg" },
   },
   {
     id: "lionheart",
