@@ -10,9 +10,9 @@ export const BALANCE = {
   scavengeSearchMs: 6_000, // per-location search duration
 
   // Meter drain per day (Normal baseline), applied at day tick
-  hungerLossPerDay: 9,
-  thirstLossPerDay: 11,
-  energyLossPerDay: 6,
+  hungerLossPerDay: 10,
+  thirstLossPerDay: 12,
+  energyLossPerDay: 7,
 
   // Meter thresholds
   lowHungerThreshold: 30, // below this, energy recovery reduced
@@ -34,9 +34,9 @@ export const BALANCE = {
     worseningAt: 45,
     severeAt: 70,
     turningAt: 100,
-    growthPerDay: 7, // untreated growth per day
-    exposureGain: 12, // gained on an infecting encounter
-    biteGain: 22,
+    growthPerDay: 8, // untreated growth per day
+    exposureGain: 14, // gained on an infecting encounter
+    biteGain: 24,
   },
 
   // Treatment probabilities by stage (base, before medicine skill / herbs)
@@ -51,11 +51,11 @@ export const BALANCE = {
 
   // Missions
   mission: {
-    baseSuccess: 0.6,
+    baseSuccess: 0.56,
     perExtraCatSuccess: 0.08,
     skillSuccessFactor: 0.005, // + per relevant skill point
-    injuryChance: 0.18,
-    infectionChance: 0.12,
+    injuryChance: 0.2,
+    infectionChance: 0.14,
     missingChance: 0.05,
     multiCatEnergyMultiplier: 1.0, // energy cost per cat
   },
@@ -89,10 +89,10 @@ export const BALANCE = {
   // Difficulty scaling — recomputed every 10 days
   difficulty: {
     scaleEveryDays: 10,
-    infectionRiskPerTier: 0.04,
-    enemyStrengthPerTier: 0.08,
-    preyScarcityPerTier: 0.05,
-    missionDurationPerTier: 0.04,
+    infectionRiskPerTier: 0.05,
+    enemyStrengthPerTier: 0.1,
+    preyScarcityPerTier: 0.06,
+    missionDurationPerTier: 0.05,
   },
 } as const;
 
