@@ -47,6 +47,7 @@ export const LOCATIONS: LocationDef[] = [
     loot: [
       { itemId: "herb_kit", weight: 4 },
       { itemId: "cobwebs", weight: 3 },
+      { itemId: "marigold", weight: 3 },
       { itemId: "leaves", weight: 2 },
       { itemId: "nothing", weight: 2 },
     ],

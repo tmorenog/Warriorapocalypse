@@ -326,7 +326,7 @@ export function useGameController() {
 
   const doAdvanceDay = useCallback(() => {
     setRun((r) => {
-      if (!r || r.ended || r.phase !== "day" || r.pendingDecision || r.pendingCutscene) return r;
+      if (!r || r.ended || r.phase !== "day" || r.pendingDecision || r.pendingCutscene || r.pendingInfectedCat) return r;
       const { run: next, coinsEarned, triggeredBattleEnemyId, droughtSurvived } = advanceDay(r, metaRef.current);
       if (coinsEarned > 0) awardCoins(coinsEarned, `day ${next.day}`);
       setTimeout(() => checkAchievements(next, { survivedDrought: droughtSurvived }), 0);
@@ -342,10 +342,10 @@ export function useGameController() {
 
   // Day countdown timer.
   useEffect(() => {
-    if (!run || run.phase !== "day" || run.paused || run.pendingDecision || run.ended || battle || run.pendingCutscene) return;
+    if (!run || run.phase !== "day" || run.paused || run.pendingDecision || run.ended || battle || run.pendingCutscene || run.pendingInfectedCat) return;
     const interval = setInterval(() => {
       setRun((r) => {
-        if (!r || r.phase !== "day" || r.paused || r.pendingDecision || r.ended) return r;
+        if (!r || r.phase !== "day" || r.paused || r.pendingDecision || r.ended || r.pendingInfectedCat) return r;
         const remaining = r.dayTimeRemainingMs - DAY_TICK_MS;
         if (remaining <= 0) {
           setTimeout(() => doAdvanceDay(), 0);

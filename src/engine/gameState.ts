@@ -11,6 +11,7 @@ import type {
   InventoryItem,
   LogEntry,
   ActiveMission,
+  InfectedEncounter,
 } from "./types";
 import { CLANS } from "@/data/clans";
 import { getCharacterDef } from "@/data/characters";
@@ -105,6 +106,76 @@ export function makeRescuedCat(rng: Rng): Cat {
   };
 }
 
+// ---- Found infected cat ----
+const STRAY_NAMES = ["Smoke", "Bracken", "Ash", "Willow", "Flint", "Sorrel", "Reed", "Pebble", "Hazel", "Nettle"];
+
+// The wounds are drawn at fixed spots on Aina's sick-cat art; the two pale ones
+// are infected (marigold), the darker gash bleeds (cobwebs).
+const INFECTED_WOUND_SPOTS: { x: number; y: number; kind: "bleeding" | "infected" }[] = [
+  { x: 0.2, y: 0.665, kind: "infected" },
+  { x: 0.4, y: 0.22, kind: "infected" },
+  { x: 0.385, y: 0.63, kind: "bleeding" },
+];
+
+export function rollInfectedEncounter(rng: Rng): InfectedEncounter {
+  const clans = Object.keys(CLANS) as (keyof typeof CLANS)[];
+  return {
+    catName: rng.pick(STRAY_NAMES) + "",
+    clan: rng.pick(clans),
+    seed: rng.int(1, 1_000_000),
+    wounds: INFECTED_WOUND_SPOTS.map((s, i) => ({ id: `w${i}`, x: s.x, y: s.y, kind: s.kind, treated: false })),
+  };
+}
+
+// A cat healed of its wounds is grateful and joins the clan.
+export function makeHealedStray(enc: InfectedEncounter): Cat {
+  return {
+    id: uid("cat"),
+    defId: "rescued",
+    name: enc.catName,
+    clan: enc.clan,
+    role: "Warrior",
+    meters: { health: 62, hunger: 55, thirst: 55, infection: 0, energy: 60 },
+    stats: { attack: 13, defense: 12, hunting: 13, medicine: 5, stealth: 12, speed: 13 },
+    infectionStage: "None",
+    passive: { id: "survivor_grit", name: "Survivor's Grit", description: "A rescued cat, grateful and hardy." },
+    battleAbility: { id: "desperate_strike", name: "Desperate Strike", description: "A fierce, desperate attack." },
+    appearance: { furColor: "#6f8f5a", furPattern: "tabby", eyeColor: "#c8a13a", scars: "none", accessory: "none", bodyType: "medium", earShape: "pointed", tailStyle: "medium" },
+    alive: true,
+    isEnemyTurned: false,
+    onMission: false,
+    cosmetics: [],
+    controllerId: null,
+  };
+}
+
+export function clearInfectedCat(run: RunState): RunState {
+  return { ...run, pendingInfectedCat: null };
+}
+
+// Wrong herb (or a botched job): the sickness spreads. A random clanmate at the
+// den is exposed. (The encounter stays open until the player dismisses the
+// result, so this does NOT clear pendingInfectedCat itself.)
+export function infectedCatSicknessSpreads(run: RunState, rng: Rng): RunState {
+  let next = run;
+  const here = next.cats.filter((c) => c.alive && !c.onMission);
+  if (here.length) {
+    const victim = rng.pick(here);
+    next = updateCat(next, victim.id, (c) => exposeCat(c, BALANCE.infection.exposureGain));
+    next = log(next, "injury", `The sickness spreads — ${victim.name} caught it from the stray.`);
+  }
+  return next;
+}
+
+// The stray pulls through and joins the clan. (Does not clear the encounter; the
+// result screen does that on dismiss.)
+export function infectedCatHealed(run: RunState, enc: InfectedEncounter): RunState {
+  const joined = makeHealedStray(enc);
+  let next = { ...run, cats: [...run.cats, joined], stats: { ...run.stats, catsRescued: run.stats.catsRescued + 1 } };
+  next = log(next, "discovery", `${joined.name} was nursed back to health and joined the group!`);
+  return next;
+}
+
 // ---- Run creation ----
 export interface CreateRunConfig {
   mainCatDef: CharacterDef;
@@ -129,6 +200,8 @@ export function createRun(config: CreateRunConfig): RunState {
     { itemId: "mouse", quantity: 3 + eff.extraFood, quality: "fresh" },
     { itemId: "fresh_water", quantity: 3 + eff.extraWater, quality: "fresh" },
     { itemId: "herb_kit", quantity: 1 },
+    { itemId: "cobwebs", quantity: 2 },
+    { itemId: "marigold", quantity: 2 },
     { itemId: "moss_bedding", quantity: 1 },
   ];
 
@@ -382,6 +455,21 @@ export function advanceDay(run: RunState, meta: MetaProfile | null): DayAdvanceR
       next = log(next, "death", "A warrior has been found dead. Appledusk lies still in the den — Mapleshade watches from the shadows.");
       next = { ...next, pendingCutscene: "mapleshade_appledusk" };
     }
+  }
+
+  // A wounded, sick stray sometimes wanders near the den — leave it, drive it
+  // off, or try to heal it. Rare, and never on top of another prompt.
+  if (
+    !next.pendingCutscene &&
+    !next.pendingInfectedCat &&
+    !next.pendingDecision &&
+    next.shelter.built &&
+    next.day >= 4 &&
+    rng.chance(0.16)
+  ) {
+    const enc = rollInfectedEncounter(rng);
+    next = { ...next, pendingInfectedCat: enc };
+    next = log(next, "event", `A sick, wounded stray — ${enc.catName} — collapses near the den.`);
   }
 
   // Coins for milestones.

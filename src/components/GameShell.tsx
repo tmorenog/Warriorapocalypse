@@ -20,6 +20,7 @@ import {
 import { MultiplayerScreen } from "./screens/MultiplayerScreen";
 import { DebugPanel } from "./screens/DebugPanel";
 import { Cutscene } from "./screens/Cutscene";
+import { InfectedCatScreen } from "./screens/InfectedCatScreen";
 
 export function GameShell() {
   const ctx = useGameController();
@@ -38,6 +39,7 @@ export function GameShell() {
     <main className="min-h-screen">
       {renderScreen()}
       {ctx.run?.pendingCutscene && <Cutscene ctx={ctx} />}
+      {ctx.run?.pendingInfectedCat && <InfectedCatScreen ctx={ctx} />}
       <ToastLayer ctx={ctx} />
       {isDev && <DebugPanel ctx={ctx} />}
     </main>

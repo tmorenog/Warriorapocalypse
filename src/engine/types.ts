@@ -199,6 +199,24 @@ export interface RunState {
   startedAtDay: number;
   lastSavedAt: number | null;
   pendingCutscene?: string | null; // id of a scripted cutscene to play
+  pendingInfectedCat?: InfectedEncounter | null; // a sick stray to leave / fight / heal
+}
+
+// A wound on a found infected cat. Its kind decides which herb heals it —
+// remember: a bleeding gash wants cobwebs, an infected wound wants marigold.
+export interface InfectedWound {
+  id: string;
+  x: number; // position on the art, as a fraction of width/height
+  y: number;
+  kind: "bleeding" | "infected";
+  treated: boolean;
+}
+
+export interface InfectedEncounter {
+  catName: string;
+  clan: ClanId;
+  wounds: InfectedWound[];
+  seed: number;
 }
 
 export type RunPhase =

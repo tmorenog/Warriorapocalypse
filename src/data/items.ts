@@ -35,6 +35,7 @@ export const ITEMS: ItemDef[] = [
   // Medicine
   { id: "herb_kit", name: "Herb Kit", category: "medicine", description: "A bundle of common healing herbs.", healValue: 20, infectionCure: 15, icon: "herb" },
   { id: "cobwebs", name: "Cobwebs", category: "medicine", description: "Stops bleeding from wounds.", healValue: 10, icon: "web" },
+  { id: "marigold", name: "Marigold", category: "medicine", description: "A bright flower — its poultice fights infection in a wound.", healValue: 8, infectionCure: 12, icon: "herb" },
   { id: "mysterious_medicine", name: "Mysterious Medicine", category: "medicine", description: "An unfamiliar Twoleg medicine. Powerful, but uncertain.", healValue: 30, infectionCure: 30, icon: "vial" },
   // Materials
   { id: "moss_bedding", name: "Moss Bedding", category: "material", description: "Soft moss for sleeping.", icon: "moss" },
