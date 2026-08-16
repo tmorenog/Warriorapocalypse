@@ -226,6 +226,26 @@ function FullscreenCat({ ctx, catId, onClose }: { ctx: GameController; catId: st
           <MeterBar kind="energy" value={cat.meters.energy} />
           {cat.meters.infection > 0 && <MeterBar kind="infection" value={cat.meters.infection} />}
         </div>
+        {(() => {
+          const cats = ctx.run!.cats;
+          const hasLeader = cats.some((c) => c.alive && c.role === "Leader");
+          const canPromote = cat.alive && hasLeader && cat.role !== "Leader" && cat.role !== "Deputy" && cat.role !== "Kit";
+          if (!canPromote) return null;
+          return (
+            <Button
+              className="mt-3 w-full"
+              variant="primary"
+              onClick={() => { ctx.promoteDeputy(cat.id); onClose(); }}
+            >
+              ⭐ Make {cat.name} deputy
+            </Button>
+          );
+        })()}
+        {cat.role === "Kit" && (
+          <p className="mt-3 text-center text-[11px] text-parchment/55">
+            A kit — grows into a warrior at about {6} days old ({cat.ageDays ?? 0} so far).
+          </p>
+        )}
         <Button className="mt-4 w-full" onClick={onClose}>Close</Button>
       </div>
     </div>

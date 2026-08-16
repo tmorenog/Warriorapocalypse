@@ -23,6 +23,8 @@ import {
   removeItem,
   updateCat,
   computeUpgradeEffects,
+  promoteToDeputy,
+  makeKit,
   type CreateRunConfig,
 } from "@/engine/gameState";
 import { Rng } from "@/engine/rng";
@@ -327,7 +329,7 @@ export function useGameController() {
 
   const doAdvanceDay = useCallback(() => {
     setRun((r) => {
-      if (!r || r.ended || r.phase !== "day" || r.pendingDecision || r.pendingCutscene || r.pendingInfectedCat) return r;
+      if (!r || r.ended || r.phase !== "day" || r.pendingDecision || r.pendingCutscene || r.pendingInfectedCat || r.pendingKitName) return r;
       const { run: next, coinsEarned, triggeredBattleEnemyId, droughtSurvived } = advanceDay(r, metaRef.current);
       if (coinsEarned > 0) awardCoins(coinsEarned, `day ${next.day}`);
       setTimeout(() => checkAchievements(next, { survivedDrought: droughtSurvived }), 0);
@@ -343,10 +345,10 @@ export function useGameController() {
 
   // Day countdown timer.
   useEffect(() => {
-    if (!run || run.phase !== "day" || run.paused || run.pendingDecision || run.ended || battle || run.pendingCutscene || run.pendingInfectedCat) return;
+    if (!run || run.phase !== "day" || run.paused || run.pendingDecision || run.ended || battle || run.pendingCutscene || run.pendingInfectedCat || run.pendingKitName) return;
     const interval = setInterval(() => {
       setRun((r) => {
-        if (!r || r.phase !== "day" || r.paused || r.pendingDecision || r.ended || r.pendingInfectedCat) return r;
+        if (!r || r.phase !== "day" || r.paused || r.pendingDecision || r.ended || r.pendingInfectedCat || r.pendingKitName) return r;
         const remaining = r.dayTimeRemainingMs - DAY_TICK_MS;
         if (remaining <= 0) {
           setTimeout(() => doAdvanceDay(), 0);
@@ -666,6 +668,33 @@ export function useGameController() {
     setTimeout(() => doAdvanceDay(), 0);
   }, [pushToast, doAdvanceDay]);
 
+  // The leader names a new deputy.
+  const promoteDeputy = useCallback(
+    (catId: string) => {
+      setRun((r) => (r ? promoteToDeputy(r, catId) : r));
+    },
+    [],
+  );
+
+  // Name the newborn kit; it joins the group as a Kit and grows up over days.
+  const nameKit = useCallback(
+    (name: string) => {
+      setRun((r) => {
+        if (!r || !r.pendingKitName) return r;
+        const rng = new Rng(r.pendingKitName.seed);
+        const kit = makeKit(name, r.pendingKitName.clan, rng);
+        let next: RunState = { ...r, cats: [...r.cats, kit], pendingKitName: null };
+        next = {
+          ...next,
+          log: [{ id: `log_${Date.now()}`, day: next.day, kind: "discovery" as const, text: `${kit.name} is born into the group.` }, ...next.log].slice(0, 60),
+        };
+        setTimeout(() => pushToast(`${kit.name} is born! 🐾`, "info"), 0);
+        return next;
+      });
+    },
+    [pushToast],
+  );
+
   // ---- meta: shop / cosmetics / settings ----
   const purchaseUpgrade = useCallback(
     (upgradeId: string) => {
@@ -749,7 +778,7 @@ export function useGameController() {
     startNewRun, continueRun, saveNow, deleteSave, importSave, resetAllData,
     // gameplay
     setPaused, selectCat, digShelter, finishScavenge, startMission, clearCutscene,
-    buildShelterUpgrade, abandonShelter, treatCat, feedGroup, giveWater, feedCatId, waterCatId, huntCatch, sleepNight,
+    buildShelterUpgrade, abandonShelter, treatCat, feedGroup, giveWater, feedCatId, waterCatId, huntCatch, sleepNight, promoteDeputy, nameKit,
     resolveDecision, doAdvanceDay,
     // battle
     startBattle, doBattleAction, tryEscape, isClanTurn,

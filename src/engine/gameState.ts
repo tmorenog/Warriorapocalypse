@@ -12,6 +12,9 @@ import type {
   LogEntry,
   ActiveMission,
   InfectedEncounter,
+  KitBirth,
+  RoleId,
+  ClanId,
 } from "./types";
 import { CLANS } from "@/data/clans";
 import { getCharacterDef } from "@/data/characters";
@@ -173,6 +176,64 @@ export function infectedCatHealed(run: RunState, enc: InfectedEncounter): RunSta
   const joined = makeHealedStray(enc);
   let next = { ...run, cats: [...run.cats, joined], stats: { ...run.stats, catsRescued: run.stats.catsRescued + 1 } };
   next = log(next, "discovery", `${joined.name} was nursed back to health and joined the group!`);
+  return next;
+}
+
+// ---- Kits: birth, growth, promotion ----
+export const KIT_GROW_DAYS = 6; // a kit becomes a warrior after this many days
+
+const KIT_FUR = ["#9a7a4a", "#6f6f76", "#c9a15a", "#3a3a40", "#e8e8e4", "#8a5a2e"];
+const KIT_EYES = ["#6fae7a", "#c8a13a", "#4d7fb0", "#5fa04a"];
+
+// A newborn kit, named by the player, starting weak but full of promise.
+export function makeKit(name: string, clan: ClanId, rng: Rng): Cat {
+  return {
+    id: uid("cat"),
+    defId: "kit",
+    name: name.trim() || "Kit",
+    clan,
+    role: "Kit",
+    meters: { health: 60, hunger: 70, thirst: 70, infection: 0, energy: 80 },
+    stats: { attack: 5, defense: 5, hunting: 4, medicine: 3, stealth: 6, speed: 8 },
+    infectionStage: "None",
+    passive: { id: "clan_born", name: "Clan-Born", description: "Born to the group — grows into a warrior in time." },
+    battleAbility: { id: "scrappy_swipe", name: "Scrappy Swipe", description: "A small but game paw-swipe." },
+    appearance: { furColor: rng.pick(KIT_FUR), furPattern: "solid", eyeColor: rng.pick(KIT_EYES), scars: "none", accessory: "none", bodyType: "small", earShape: "pointed", tailStyle: "medium" },
+    alive: true,
+    isEnemyTurned: false,
+    onMission: false,
+    cosmetics: [],
+    controllerId: null,
+    ageDays: 0,
+  };
+}
+
+// When a kit grows up: warrior role, sturdier body, grown-up stats.
+export function growKitToWarrior(cat: Cat): Cat {
+  return {
+    ...cat,
+    role: "Warrior",
+    meters: { ...cat.meters, health: Math.max(cat.meters.health, 90) },
+    stats: { attack: 13, defense: 12, hunting: 12, medicine: 4, stealth: 11, speed: 13 },
+    appearance: { ...cat.appearance, bodyType: "medium" },
+  };
+}
+
+// The leader names a new deputy; any current deputy steps back to warrior.
+export function promoteToDeputy(run: RunState, catId: string): RunState {
+  const target = run.cats.find((c) => c.id === catId);
+  if (!target || !target.alive) return run;
+  if (!run.cats.some((c) => c.alive && c.role === "Leader")) return run; // need a leader
+  if (target.role === "Leader" || target.role === "Kit") return run;
+  let next: RunState = {
+    ...run,
+    cats: run.cats.map((c) => {
+      if (c.id === catId) return { ...c, role: "Deputy" as RoleId };
+      if (c.alive && c.role === "Deputy") return { ...c, role: "Warrior" as RoleId };
+      return c;
+    }),
+  };
+  next = log(next, "system", `${target.name} is named deputy of the group.`);
   return next;
 }
 
@@ -470,6 +531,38 @@ export function advanceDay(run: RunState, meta: MetaProfile | null): DayAdvanceR
     const enc = rollInfectedEncounter(rng);
     next = { ...next, pendingInfectedCat: enc };
     next = log(next, "event", `A sick, wounded stray — ${enc.catName} — collapses near the den.`);
+  }
+
+  // Kits age each day and grow into warriors once old enough.
+  next = { ...next, cats: next.cats.map((c) => (c.alive ? { ...c, ageDays: (c.ageDays ?? 0) + 1 } : c)) };
+  for (const c of next.cats) {
+    if (c.alive && c.role === "Kit" && (c.ageDays ?? 0) >= KIT_GROW_DAYS) {
+      next = updateCat(next, c.id, (k) => growKitToWarrior(k));
+      next = log(next, "system", `${c.name} has grown into a warrior!`);
+    }
+  }
+
+  // New life: with a settled den and a couple of grown cats, a kit may be born.
+  // The player names it, so this raises a prompt instead of adding it silently.
+  if (
+    !next.pendingCutscene &&
+    !next.pendingInfectedCat &&
+    !next.pendingDecision &&
+    !next.pendingKitName &&
+    next.shelter.built &&
+    next.cats.filter((c) => c.alive).length < 10 &&
+    rng.chance(0.14)
+  ) {
+    const parents = next.cats.filter((c) => c.alive && !c.onMission && (c.role === "Warrior" || c.role === "Deputy" || c.role === "Leader"));
+    if (parents.length >= 2) {
+      const a = rng.pick(parents);
+      const b = rng.pick(parents.filter((c) => c.id !== a.id));
+      next = {
+        ...next,
+        pendingKitName: { clan: a.clan, parentNames: [a.name, b.name].filter(Boolean) as string[], seed: rng.int(1, 1_000_000) },
+      };
+      next = log(next, "discovery", `${a.name} and ${b.name} have a new kit — it needs a name!`);
+    }
   }
 
   // Coins for milestones.

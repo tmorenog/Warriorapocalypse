@@ -109,6 +109,8 @@ export interface Cat {
   // day; it reverts to its normal art once the day passes (e.g. Mapleshade right
   // after she settles her old score with Appledusk).
   bloodyUntilDay?: number | null;
+  // Days this cat has lived in the group. Kits grow into warriors once old enough.
+  ageDays?: number;
 }
 
 export interface InventoryItem {
@@ -200,6 +202,14 @@ export interface RunState {
   lastSavedAt: number | null;
   pendingCutscene?: string | null; // id of a scripted cutscene to play
   pendingInfectedCat?: InfectedEncounter | null; // a sick stray to leave / fight / heal
+  pendingKitName?: KitBirth | null; // a newborn kit awaiting a name from the player
+}
+
+// A kit that's just been born; the player names it before it joins the group.
+export interface KitBirth {
+  clan: ClanId;
+  parentNames: string[];
+  seed: number;
 }
 
 // A wound on a found infected cat. Its kind decides which herb heals it —
