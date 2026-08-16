@@ -82,6 +82,7 @@ export function DayScreen({ ctx }: { ctx: GameController }) {
                 spots={denSpots}
                 selectedCatId={run.selectedCatId}
                 onView={(id) => { ctx.selectCat(id); setViewCatId(id); }}
+                ctx={ctx}
               />
             ) : (
               <div className="flex h-full flex-col justify-between p-2">
@@ -320,11 +321,37 @@ function DenClan({
   spots,
   selectedCatId,
   onView,
+  ctx,
 }: {
   spots: (Cat | null)[];
   selectedCatId: string;
   onView: (id: string) => void;
+  ctx: GameController;
 }) {
+  // Drag a food/water store onto a cat to feed/water just that cat.
+  const [drag, setDrag] = useState<{ kind: "food" | "water"; x: number; y: number } | null>(null);
+  const foodCount = ctx.run ? ctx.run.inventory.filter((i) => ITEMS_BY_ID[i.itemId]?.foodValue).reduce((s, i) => s + i.quantity, 0) : 0;
+  const waterCount = ctx.run ? ctx.run.inventory.filter((i) => ITEMS_BY_ID[i.itemId]?.waterValue).reduce((s, i) => s + i.quantity, 0) : 0;
+
+  const startDrag = (kind: "food" | "water") => (e: React.PointerEvent) => {
+    e.preventDefault();
+    (e.currentTarget as HTMLElement).setPointerCapture?.(e.pointerId);
+    setDrag({ kind, x: e.clientX, y: e.clientY });
+  };
+  const moveDrag = (e: React.PointerEvent) => {
+    setDrag((d) => (d ? { ...d, x: e.clientX, y: e.clientY } : d));
+  };
+  const endDrag = (kind: "food" | "water") => (e: React.PointerEvent) => {
+    const el = document.elementFromPoint(e.clientX, e.clientY);
+    const target = el?.closest("[data-cat-id]") as HTMLElement | null;
+    const catId = target?.getAttribute("data-cat-id");
+    if (catId) {
+      if (kind === "food") ctx.feedCatId(catId);
+      else ctx.waterCatId(catId);
+    }
+    setDrag(null);
+  };
+
   return (
     <div className="absolute inset-0">
       {spots.map((c, i) => {
@@ -359,9 +386,10 @@ function DenClan({
             <button
               onClick={() => onView(c.id)}
               aria-label={`View ${c.name}`}
+              data-cat-id={c.alive && !away ? c.id : undefined}
               style={{ left: `${s.left}%`, top: `${s.top}%`, width: `${s.width}%`, height: `${s.height}%` }}
               className={`group absolute rounded-xl transition ${!c.alive ? "opacity-50" : ""} ${
-                c.id === selectedCatId ? "ring-2 ring-ember/80" : "hover:ring-2 hover:ring-parchment/40"
+                drag && c.alive && !away ? "ring-2 ring-fern ring-offset-1" : c.id === selectedCatId ? "ring-2 ring-ember/80" : "hover:ring-2 hover:ring-parchment/40"
               }`}
             >
               <span className="pointer-events-none absolute left-1/2 top-full flex -translate-x-1/2 flex-col items-center gap-0.5">
@@ -377,6 +405,45 @@ function DenClan({
           </React.Fragment>
         );
       })}
+
+      {/* Food & water stores — drag one onto a cat to feed/water just that cat. */}
+      <div className="absolute bottom-1 left-1 z-40 flex gap-1">
+        <button
+          onPointerDown={startDrag("food")}
+          onPointerMove={moveDrag}
+          onPointerUp={endDrag("food")}
+          aria-label="Food store — drag onto a cat to feed it"
+          className="flex touch-none select-none flex-col items-center rounded-lg border border-parchment/25 bg-black/55 px-2 py-1 text-parchment active:scale-95"
+          style={{ touchAction: "none" }}
+        >
+          <span className="text-lg leading-none">🍖</span>
+          <span className="text-[9px] font-semibold">×{foodCount}</span>
+        </button>
+        <button
+          onPointerDown={startDrag("water")}
+          onPointerMove={moveDrag}
+          onPointerUp={endDrag("water")}
+          aria-label="Water store — drag onto a cat to give it water"
+          className="flex touch-none select-none flex-col items-center rounded-lg border border-parchment/25 bg-black/55 px-2 py-1 text-parchment active:scale-95"
+          style={{ touchAction: "none" }}
+        >
+          <span className="text-lg leading-none">💧</span>
+          <span className="text-[9px] font-semibold">×{waterCount}</span>
+        </button>
+      </div>
+      {drag && (
+        <div
+          className="pointer-events-none fixed z-[70] -translate-x-1/2 -translate-y-1/2 text-3xl drop-shadow-lg"
+          style={{ left: drag.x, top: drag.y }}
+        >
+          {drag.kind === "food" ? "🍖" : "💧"}
+        </div>
+      )}
+      {drag && (
+        <div className="pointer-events-none absolute left-1/2 top-1 z-40 -translate-x-1/2 rounded-full bg-black/70 px-2 py-0.5 text-[10px] text-parchment">
+          Drop on a cat to {drag.kind === "food" ? "feed" : "water"} it
+        </div>
+      )}
     </div>
   );
 }

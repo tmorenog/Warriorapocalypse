@@ -506,6 +506,57 @@ export function useGameController() {
     });
   }, []);
 
+  // Feed/water a specific cat — used by dragging a food/water store onto it.
+  const feedCatId = useCallback(
+    (catId: string) => {
+      setRun((r) => {
+        if (!r) return r;
+        const cat = r.cats.find((c) => c.id === catId && c.alive);
+        if (!cat) return r;
+        if (cat.meters.hunger >= 100) {
+          setTimeout(() => pushToast(`${cat.name} isn't hungry`, "info"), 0);
+          return r;
+        }
+        const foodItem = r.inventory.find((i) => ITEMS_BY_ID[i.itemId]?.foodValue);
+        if (!foodItem) {
+          setTimeout(() => pushToast("No food in the stores", "info"), 0);
+          return r;
+        }
+        const def = ITEMS_BY_ID[foodItem.itemId];
+        let next = updateCat(r, cat.id, (c) => ({ ...c, meters: { ...c.meters, hunger: Math.min(100, c.meters.hunger + (def.foodValue ?? 12)) } }));
+        next = removeItem(next, foodItem.itemId, 1);
+        setTimeout(() => pushToast(`Fed ${cat.name} 🍖`, "info"), 0);
+        return next;
+      });
+    },
+    [pushToast],
+  );
+
+  const waterCatId = useCallback(
+    (catId: string) => {
+      setRun((r) => {
+        if (!r) return r;
+        const cat = r.cats.find((c) => c.id === catId && c.alive);
+        if (!cat) return r;
+        if (cat.meters.thirst >= 100) {
+          setTimeout(() => pushToast(`${cat.name} isn't thirsty`, "info"), 0);
+          return r;
+        }
+        const waterItem = r.inventory.find((i) => ITEMS_BY_ID[i.itemId]?.waterValue);
+        if (!waterItem) {
+          setTimeout(() => pushToast("No water in the stores", "info"), 0);
+          return r;
+        }
+        const def = ITEMS_BY_ID[waterItem.itemId];
+        let next = updateCat(r, cat.id, (c) => ({ ...c, meters: { ...c.meters, thirst: Math.min(100, c.meters.thirst + (def.waterValue ?? 20)) } }));
+        next = removeItem(next, waterItem.itemId, 1);
+        setTimeout(() => pushToast(`Watered ${cat.name} 💧`, "info"), 0);
+        return next;
+      });
+    },
+    [pushToast],
+  );
+
   // ---- meta: shop / cosmetics / settings ----
   const purchaseUpgrade = useCallback(
     (upgradeId: string) => {
@@ -589,7 +640,7 @@ export function useGameController() {
     startNewRun, continueRun, saveNow, deleteSave, importSave, resetAllData,
     // gameplay
     setPaused, selectCat, digShelter, finishScavenge, startMission, clearCutscene,
-    buildShelterUpgrade, abandonShelter, treatCat, feedGroup, giveWater,
+    buildShelterUpgrade, abandonShelter, treatCat, feedGroup, giveWater, feedCatId, waterCatId,
     resolveDecision, doAdvanceDay,
     // battle
     startBattle, doBattleAction, tryEscape, isClanTurn,
