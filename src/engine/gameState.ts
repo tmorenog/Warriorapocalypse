@@ -465,7 +465,7 @@ export function advanceDay(run: RunState, meta: MetaProfile | null): DayAdvanceR
     !next.pendingDecision &&
     next.shelter.built &&
     next.day >= 3 &&
-    rng.chance(0.35)
+    rng.chance(0.68)
   ) {
     const enc = rollInfectedEncounter(rng);
     next = { ...next, pendingInfectedCat: enc };
