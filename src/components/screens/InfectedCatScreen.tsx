@@ -36,6 +36,7 @@ export function InfectedCatScreen({ ctx }: { ctx: GameController }) {
   const [wounds, setWounds] = useState<InfectedWound[]>(enc.wounds);
   const [selHerb, setSelHerb] = useState<string | null>(null);
   const [strikes, setStrikes] = useState(0);
+  const [showHint, setShowHint] = useState(true); // herb legend, dismissible
   const [flash, setFlash] = useState<{ wound: string; ok: boolean } | null>(null);
   const [result, setResult] = useState<{ title: string; body: string; tone: "good" | "bad" | "neutral" } | null>(null);
 
@@ -236,6 +237,19 @@ export function InfectedCatScreen({ ctx }: { ctx: GameController }) {
       {/* ---- Heal ---- */}
       {view === "heal" && (
         <div className="mt-3 w-full max-w-md">
+          {showHint && (
+            <div className="mb-3 rounded-lg border border-parchment/25 bg-black/50 p-3 text-xs text-parchment/85">
+              <p className="mb-1 font-display text-sm text-ember">Which herb?</p>
+              <ul className="space-y-1">
+                <li>🩸 <b>Red</b> (bleeding) wounds → 🕸️ <b>Cobwebs</b></li>
+                <li>💗 <b>Regular</b> (infected) wounds → 🌼 <b>Marigold</b></li>
+              </ul>
+              <p className="mt-1 text-[10px] text-blood/80">The wrong herb kills them — remember it!</p>
+              <button className="btn mt-2 w-full py-1.5 text-xs" onClick={() => setShowHint(false)}>
+                Got it
+              </button>
+            </div>
+          )}
           <div className="flex justify-center gap-2">
             {HERBS.map((h) => {
               const count = herbCount(h.id);
