@@ -10,6 +10,7 @@ import type {
   GameSettings,
   Cat,
   BattleAction,
+  LogEntry,
 } from "@/engine/types";
 import {
   createRun,
@@ -34,7 +35,7 @@ import {
   applyBattleResultsToCats,
   enemiesDefeatedCount,
 } from "@/engine/battle";
-import { treatInfection } from "@/engine/infection";
+import { treatInfection, exposeCat } from "@/engine/infection";
 import { HERBS_BY_ID } from "@/data/herbs";
 import { ITEMS_BY_ID } from "@/data/items";
 import { SHELTER_UPGRADES_BY_ID } from "@/data/shelters";
@@ -593,6 +594,78 @@ export function useGameController() {
     [pushToast],
   );
 
+  // Sleep through the night: everyone rests deeply for extra energy, but the
+  // dark is dangerous. A living Med Cat (Elder) may receive a StarClan dream,
+  // which brings a boon and helps ward off the night's danger. Then the day ends.
+  const sleepNight = useCallback(() => {
+    setRun((r) => {
+      if (!r) return r;
+      const rng = new Rng(r.rngState + 137);
+      let next = r;
+      const entries: { kind: LogEntry["kind"]; text: string }[] = [];
+
+      // Deep rest — cats at the den recover extra energy.
+      next = {
+        ...next,
+        cats: next.cats.map((c) => (c.alive && !c.onMission ? { ...c, meters: { ...c.meters, energy: Math.min(100, c.meters.energy + 30) } } : c)),
+      };
+      const resters = next.cats.filter((c) => c.alive && !c.onMission);
+
+      // StarClan dream — needs a living Med Cat (internal role "Elder").
+      const elder = next.cats.find((c) => c.alive && c.role === "Elder");
+      let dreamed = false;
+      if (elder && rng.chance(0.55)) {
+        dreamed = true;
+        const boon = rng.int(0, 2);
+        if (boon === 0) {
+          const hurt = [...next.cats].filter((c) => c.alive).sort((a, b) => a.meters.health - b.meters.health)[0];
+          if (hurt) next = updateCat(next, hurt.id, (c) => ({ ...c, meters: { ...c.meters, health: Math.min(100, c.meters.health + 24) } }));
+          entries.push({ kind: "event", text: `${elder.name} walks with StarClan and wakes with a healing dream — ${hurt?.name ?? "a clanmate"}'s wounds knit closed.` });
+        } else if (boon === 1) {
+          next = { ...next, cats: next.cats.map((c) => (c.alive ? { ...c, meters: { ...c.meters, infection: Math.max(0, c.meters.infection - 16) } } : c)) };
+          entries.push({ kind: "event", text: `StarClan shows ${elder.name} a stream of clean water; the sickness loosens its grip on the clan.` });
+        } else {
+          next = { ...next, cats: next.cats.map((c) => (c.alive && !c.onMission ? { ...c, meters: { ...c.meters, energy: Math.min(100, c.meters.energy + 15) } } : c)) };
+          entries.push({ kind: "event", text: `${elder.name} dreams among the stars, and the whole clan rests deep and easy.` });
+        }
+      }
+
+      // The night is dangerous — a dream helps ward it off.
+      const dangerChance = dreamed ? 0.15 : 0.42;
+      if (resters.length && rng.chance(dangerChance)) {
+        const bad = rng.int(0, 2);
+        if (bad === 0) {
+          const v = rng.pick(resters);
+          next = updateCat(next, v.id, (c) => ({ ...c, meters: { ...c.meters, health: Math.max(1, c.meters.health - 18) } }));
+          entries.push({ kind: "injury", text: `Something crept into the camp in the dark — ${v.name} was hurt in the night.` });
+        } else if (bad === 1) {
+          const food = next.inventory.find((i) => ITEMS_BY_ID[i.itemId]?.foodValue);
+          if (food) {
+            next = removeItem(next, food.itemId, 1);
+            entries.push({ kind: "resource", text: `A thief raided the fresh-kill pile overnight — some prey is gone.` });
+          } else {
+            entries.push({ kind: "event", text: `Rustling in the dark — but the stores were already bare.` });
+          }
+        } else {
+          const v = rng.pick(resters);
+          next = updateCat(next, v.id, (c) => exposeCat(c, 12));
+          entries.push({ kind: "injury", text: `The cold, damp night settled in ${v.name}'s chest — the sickness took hold.` });
+        }
+      } else {
+        entries.push({ kind: "system", text: `The clan sleeps through a quiet night.` });
+      }
+
+      next = { ...next, rngState: rng.state };
+      entries.forEach((e, i) => {
+        next = { ...next, log: [{ id: `log_${Date.now()}_${i}`, day: next.day, kind: e.kind, text: e.text }, ...next.log].slice(0, 60) };
+      });
+      if (dreamed) setTimeout(() => pushToast("✨ A dream from StarClan", "achievement"), 0);
+      return next;
+    });
+    // Sleeping through the night ends the day.
+    setTimeout(() => doAdvanceDay(), 0);
+  }, [pushToast, doAdvanceDay]);
+
   // ---- meta: shop / cosmetics / settings ----
   const purchaseUpgrade = useCallback(
     (upgradeId: string) => {
@@ -676,7 +749,7 @@ export function useGameController() {
     startNewRun, continueRun, saveNow, deleteSave, importSave, resetAllData,
     // gameplay
     setPaused, selectCat, digShelter, finishScavenge, startMission, clearCutscene,
-    buildShelterUpgrade, abandonShelter, treatCat, feedGroup, giveWater, feedCatId, waterCatId, huntCatch,
+    buildShelterUpgrade, abandonShelter, treatCat, feedGroup, giveWater, feedCatId, waterCatId, huntCatch, sleepNight,
     resolveDecision, doAdvanceDay,
     // battle
     startBattle, doBattleAction, tryEscape, isClanTurn,

@@ -119,6 +119,7 @@ export function DayScreen({ ctx }: { ctx: GameController }) {
 
           {/* Mobile tab content */}
           <div className="sm:hidden">
+            {isNightNow(run) && <SleepButton ctx={ctx} />}
             {tab === "cats" && <SelectedCatPanel ctx={ctx} cat={selected} />}
             {tab === "missions" && <MissionsInline ctx={ctx} />}
             {tab === "shelter" && <ShelterInline ctx={ctx} />}
@@ -525,6 +526,32 @@ function SelectedCatPanel({ ctx, cat }: { ctx: GameController; cat: Cat }) {
   );
 }
 
+// Night falls in the last third of the day, when the Sleep option opens up.
+function isNightNow(run: { dayTimeRemainingMs: number }): boolean {
+  return run.dayTimeRemainingMs <= 60000 * 0.34;
+}
+
+// Sleep through the night: extra energy, but the dark is dangerous — and a Med
+// Cat may receive a dream from StarClan.
+function SleepButton({ ctx }: { ctx: GameController }) {
+  const run = ctx.run!;
+  const hasElder = run.cats.some((c) => c.alive && c.role === "Elder");
+  return (
+    <div className="mt-2 rounded-lg border border-fern/25 bg-night/70 p-2">
+      <button
+        onClick={ctx.sleepNight}
+        className="flex w-full items-center justify-center gap-2 rounded-lg bg-gradient-to-b from-[#2a3350] to-[#141b2a] py-3 font-display text-base text-parchment ring-1 ring-parchment/15 transition active:scale-95"
+      >
+        🌙 Sleep through the night
+      </button>
+      <p className="mt-1 text-center text-[11px] text-parchment/55">
+        Deep rest restores extra energy — but the night is dangerous.
+        {hasElder ? " Your Med Cat may dream of StarClan. ✨" : " With no Med Cat, no one walks with StarClan."}
+      </p>
+    </div>
+  );
+}
+
 function ActionsPanel({ ctx, openModal }: { ctx: GameController; openModal: (m: "missions" | "shelter" | "inventory") => void }) {
   const run = ctx.run!;
   const activeMissions = run.activeMissions.length;
@@ -559,6 +586,7 @@ function ActionsPanel({ ctx, openModal }: { ctx: GameController; openModal: (m: 
         <Button onClick={ctx.giveWater}>💧 Water</Button>
         <Button onClick={ctx.doAdvanceDay}>⏭ Next Day</Button>
       </div>
+      {isNightNow(run) && <SleepButton ctx={ctx} />}
       <p className="mt-2 text-[11px] text-parchment/60">
         One day lasts one minute. Manage your group before the day ends — or advance early.
       </p>
