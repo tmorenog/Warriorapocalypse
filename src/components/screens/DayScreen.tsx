@@ -660,7 +660,8 @@ function MissionsInline({ ctx }: { ctx: GameController }) {
         <HuntCutscene
           onCatch={() => {
             setShowHunt(false);
-            beginMission(); // caught it — the hunt goes ahead
+            ctx.huntCatch(selectedCats); // caught it — fresh prey goes straight to the stores
+            setSelectedCats([]);
           }}
           onMiss={() => {
             setShowHunt(false); // missed — the cats stay; try again

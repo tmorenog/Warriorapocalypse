@@ -557,6 +557,42 @@ export function useGameController() {
     [pushToast],
   );
 
+  // A successful hunt in the pounce mini-game brings back fresh prey right away.
+  const huntCatch = useCallback(
+    (catIds: string[]) => {
+      setRun((r) => {
+        if (!r) return r;
+        const hunters = r.cats.filter((c) => catIds.includes(c.id) && c.alive);
+        if (!hunters.length) return r;
+        const rng = new Rng(r.rngState + 91);
+        const PREY = ["mouse", "vole", "bird", "squirrel"];
+        let next = r;
+        const caught: string[] = [];
+        for (const h of hunters) {
+          // A skilled hunter sometimes brings back a second catch.
+          const extra = rng.chance(Math.min(0.5, 0.12 + h.stats.hunting * 0.015)) ? 1 : 0;
+          for (let k = 0; k <= extra; k++) {
+            const prey = rng.pick(PREY);
+            next = addItem(next, prey, 1);
+            caught.push(ITEMS_BY_ID[prey].name);
+          }
+          next = updateCat(next, h.id, (c) => ({ ...c, meters: { ...c.meters, energy: Math.max(0, c.meters.energy - 10) } }));
+        }
+        next = { ...next, rngState: rng.state };
+        next = {
+          ...next,
+          log: [
+            { id: `log_${Date.now()}`, day: next.day, kind: "resource" as const, text: `The hunt brings back fresh prey: ${caught.join(", ")}.` },
+            ...next.log,
+          ].slice(0, 60),
+        };
+        setTimeout(() => pushToast(`Caught ${caught.length} prey! 🐭`, "info"), 0);
+        return next;
+      });
+    },
+    [pushToast],
+  );
+
   // ---- meta: shop / cosmetics / settings ----
   const purchaseUpgrade = useCallback(
     (upgradeId: string) => {
@@ -640,7 +676,7 @@ export function useGameController() {
     startNewRun, continueRun, saveNow, deleteSave, importSave, resetAllData,
     // gameplay
     setPaused, selectCat, digShelter, finishScavenge, startMission, clearCutscene,
-    buildShelterUpgrade, abandonShelter, treatCat, feedGroup, giveWater, feedCatId, waterCatId,
+    buildShelterUpgrade, abandonShelter, treatCat, feedGroup, giveWater, feedCatId, waterCatId, huntCatch,
     resolveDecision, doAdvanceDay,
     // battle
     startBattle, doBattleAction, tryEscape, isClanTurn,
